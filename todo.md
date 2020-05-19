@@ -1,31 +1,28 @@
 # TODO
 
-### Vital
+### Core
 
-- Health needs to update visually
-- xray/grapple to remove call end level
-- morphing ball disappeared (smile editor learn)
-- way to finish game 1/2 there
+- [ ] Health needs to update visually
+- [ ] xray/grapple to remove to check and call end level
+- [ ] morphing ball disappeared (smile editor learn)
+- [ ] way to finish game (1/2 way there)
+- [x] allow missiles/super missiles/power bombs to have less than 5 remaining
+- [x] needs to start with 230 ammo or start on zebes
+- [x] Needs to minus ammo count (and no negative)
+- [x] need to start with correct beams/items
+- [x] Minus max health/ammo/pb
+- [x] needs to remove equipment
+- [x] needs to remove beams
+- [x] needs to awaken zebes
 
-### Nice to Have
+### Wanted
 
-- remove grapple/xray icon (maybe missiles too)
-- want to have item graphics to be put back (start empty, return full)
-- have game equip spazer when removing plasma
-- want to kill ridley in a few hits (maybe not needed if start on zebes)
-
-### Done
-
-- allow missiles/super missiles/power bombs to have less than 5 remaining
-
-- needs to start with 230 ammo or start on zebes
-- Needs to minus ammo count (and no negative)
-- need to start with correct beams/items
-- Minus max health/ammo/pb
-- needs to remove equipment
-- needs to remove beams
-- prevent murder beam
-- needs to awaken zebes
+- [ ] remove grapple/xray icon (maybe missiles too)
+- [x] prevent murder beam
+- [ ] remove missile/supermissile/powerbomb icons when complete
+- [ ] want to have item graphics to be put back (start empty, return full)
+- [ ] have game equip spazer when removing plasma
+- [ ] want to kill ridley in a few hits (maybe not needed if start on zebes)
 
 # Notes
 

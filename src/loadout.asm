@@ -10,7 +10,7 @@ new_heath:
    LDA #$05DB             ;\
    STA $09C4 ; [$7E:09C4]  ;} Health
    STA $09C2  ; [$7E:09C2]  ;/
-   LDA #$000A             ;\  00E6   =  230  000A = 10
+   LDA #$00E6             ;\  00E6   =  230  000A = 10
    STA $09C8 ; [$7E:09C8]  ;} Missiles
    STA $09C6 ; [$7E:09C6]  ;/
    LDA #$0032             ;\
