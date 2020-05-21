@@ -198,22 +198,31 @@ hud_ammo_drawing:
         phx 
         phy 
         lda !samus_max_missiles
-        ;beq .no_missile
+        beq .no_missile
         jsr draw_missile
+        bra .supers
 .no_missile:
+	jsr clear_missile
+.supers:
         lda !samus_max_super_missiles
-        ;beq .no_super
+        beq .no_super
         jsr draw_super
+        bra .power_bombs
 .no_super:
+        jsr clear_super
+.power_bombs:
         lda !samus_max_power_bombs
-        ;beq .no_power_bomb
+        beq .no_power_bomb
         jsr draw_power_bomb
+        bra .finish_draw
 .no_power_bomb:
+        jsr clear_power_bomb
+.finish_draw:
         ply 
         plx 
         pla 
         jmp $9C55
- 
+
 draw_missile:
         jsr extract_three_digits
         lda !hud_item_index
@@ -334,6 +343,83 @@ draw_power_bomb:
 	ldx !row3_power_bomb_index_vanilla
 	jsr power_bomb_count_drawing_row3
         rts
+
+clear_power_bomb:
+        lda #$2C0F
+        sta !row1_power_bomb_tile0
+        sta !row1_power_bomb_tile1
+        sta !row1_power_bomb_tile2
+        sta !row2_power_bomb_tile0 ; 7EC66A = 8308330
+        sta !row2_power_bomb_tile1
+        sta $7EC6AA
+        sta $7EC6AC
+        rts
+clear_super:
+        lda #$2C0F
+        sta !row1_super_tile0
+        sta !row1_super_tile1
+        sta !row1_super_tile2
+        sta !row2_super_tile0 ; 8308324
+        sta !row2_super_tile1
+        sta $7EC6A4
+        sta $7EC6A6
+        rts
+clear_missile:
+        lda #$2C0F
+        sta !row1_missile_tile0
+        sta !row1_missile_tile1
+        sta !row1_missile_tile2
+        sta !row2_missile_tile0
+        sta !row2_missile_tile1
+        sta !row2_missile_tile2
+
+
+;; workings out
+;!row1_missile_tile0      = $7EC61C = 8308252
+;!row1_missile_tile1      = $7EC61E = 8308254 = 2
+;!row1_missile_tile2      = $7EC620 = 8308256 = 2
+;!row2_missile_tile0      = $7EC65C = 8308316 = 64 from 1st
+;!row2_missile_tile1      = $7EC65E = 8308318
+;!row2_missile_tile2      = $7EC660 = 8308320 
+;
+;!row1_missile_tile0      = $7EC61C
+;!row1_missile_tile1      = $7EC61E
+;!row1_missile_tile2      = $7EC620
+; end workings out
+
+        ;; Third row
+        lda #$2C0F
+        sta $7EC69C
+        lda #$2C0F
+        sta $7EC69E
+        lda #$2C0F
+        sta $7EC6A0
+;        ldy #$99AF
+;        jsr clear_tile
+        rts
+
+        
+clear_tile:
+;;; $9A4C: Clear 2x2  icon to HUD tilemap ;;;
+{
+   ;; Parameters:
+   ;;     X: HUD tilemap index
+   ;;     Y: Source address
+
+   ; Called by:
+   ;     $9A0E with X = 1Ch, Y = $99AF: Clear super missiles to HUD tilemap
+   ;     $9A1E with X = 22h, Y = $99B7: Clear power bombs to HUD tilemap
+   ;     $9A2E with X = 28h, Y = $99BF: Clear grapple to HUD tilemap
+   ;     $9A3E with X = 2Eh, Y = $99C7: Clear x-ray to HUD tilemap
+        LDA #$2C0F ;[$80:99AF]  ;\
+        STA $C608,y ;[$7E:C624];| top
+        STA $C60A,y ;[$7E:C626];/ top
+        STA $C648,y ;[$7E:C664];| mid
+        STA $C64A,y ;[$7E:C666];/ mid
+        RTS
+}
+
+   
  
 ;;; Extract three digits
 ;;; Parameters:

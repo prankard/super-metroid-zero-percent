@@ -2,10 +2,11 @@
 
 ### Core
 
-- [ ] Health needs to update visually
-- [ ] xray/grapple to remove to check and call end level
-- [ ] morphing ball disappeared (smile editor learn)
-- [ ] way to finish game (1/2 way there)
+- [x] Health needs to update visually
+- [x] reserve needs to update visually
+- [x] xray/grapple/beams to remove to check and call end level
+- [x] morphing ball disappeared (smile editor learn)
+- [x] way to finish game
 - [x] allow missiles/super missiles/power bombs to have less than 5 remaining
 - [x] needs to start with 230 ammo or start on zebes
 - [x] Needs to minus ammo count (and no negative)
@@ -17,12 +18,33 @@
 
 ### Wanted
 
-- [ ] remove grapple/xray icon (maybe missiles too)
+- [x] remove grapple/xray icon (maybe missiles too)
 - [x] prevent murder beam
-- [ ] remove missile/supermissile/powerbomb icons when complete
+- [x] basic varia tweaks (certain block to make it easier to travel and prevent softlock)
+- [x] remove missile/supermissile/powerbomb icons when complete
+- [x] turn on auto reserves by default
+- [ ] speed up fanfare for collecting items
 - [ ] want to have item graphics to be put back (start empty, return full)
 - [ ] have game equip spazer when removing plasma
+
+### Maybe wanted
+
 - [ ] want to kill ridley in a few hits (maybe not needed if start on zebes)
+- [ ] make zebes sleep when completing or morph ball?
+- [ ] do you want to save the animals? not possible
+- [ ] can we run the lava animation backwards?
+
+### Bugs
+
+- [ ] When collecting grapple/xray, you can still use it after selection until you change hud index
+- [ ] turn off auto reserve when collecting last reserve tank (to stop icon)
+- [ ] bug - reserve keep on reserving all the time (animates from 100 - 99, then refills back to 100), meaning you can't get rid of them to crystal flash
+- [x] gravity suit (and probably varia suit) animation plays and messes up with your equipment by re-equipping
+- [ ] bt activates when you have bombs, not when you don't have bombs
+- [ ] 1% completion as due to morphing ball id change
+- [ ] bomb counter goes up after powerbombs selected
+
+
 
 # Notes
 
@@ -44,7 +66,6 @@ http://patrickjohnston.org/bank/index.html
 
 Event States: http://www.metroidconstruction.com/SMMM/room_state_disassembly.txt
 Ram Map: https://jathys.zophar.net/supermetroid/kejardon/RAMMap.txt
-
 
 
 

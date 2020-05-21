@@ -17,7 +17,7 @@ for %%f in (src/*.asm) do (
 
 for %%f in (ips/*.ips) do (
     echo ips/%%f
-    %FLOATING_IPS% src/%%f build/rom.sfc
+    %FLOATING_IPS% ips/%%f build/rom.sfc
 )
 
 pause
