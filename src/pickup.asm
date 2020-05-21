@@ -108,6 +108,10 @@ org $91D5BA
 org $91D4E4 
    RTL
 
+; force 0% credits
+org $8BE634 
+   JMP $E67D
+
 
 ; Free space bank 84:EFD3-FFFF
 org $84EFD3 
@@ -141,6 +145,8 @@ check_missiles:
    STA !missiles ; set max to missiles 
 load_missiles_and_return:
    JSR check_all_items
+   LDA #$0001 ; x-ray selected index
+   JSR deselect_if_current_item
    LDA !missiles ; load max missiles
    JMP $89BD ; go back
 
@@ -152,6 +158,8 @@ check_supers:
    STA !supers ; set max 
 load_supers_and_return:
    JSR check_all_items
+   LDA #$0002 ; x-ray selected index
+   JSR deselect_if_current_item
    LDA !supers ; load supers
    JMP $89E6 ; go back
 
@@ -163,6 +171,8 @@ check_power_bombs:
    STA !power_bombs ; set max 
 load_power_bombs_and_return:
    JSR check_all_items
+   LDA #$0003 ; x-ray selected index
+   JSR deselect_if_current_item
    LDA !power_bombs ; load supers
    JMP $8A0F ; go back
 
@@ -178,7 +188,7 @@ pickup_beam_set_spazer_plasma:
    ; todo, toggle spazer when unquipt plasma
 
 check_all_items:
-   ;JMP check_all_success ; test success
+   JMP check_all_success ; test success
    LDA !max_missiles
    BNE check_all_failed
    LDA !max_supers
@@ -207,11 +217,15 @@ collect_equipment:
 collect_grapple:
    JSL clear_graple_hud
    JSR check_all_items
+   LDA #$0004 ; grapple selected index
+   JSR deselect_if_current_item
    JMP $8930
 
 collect_xray:
    JSL clear_xray_hud
    JSR check_all_items
+   LDA #$0005 ; x-ray selected index
+   JSR deselect_if_current_item
    JMP $8957
 
 ;;; $9A3E: Add x-ray to HUD tilemap ;;;
@@ -349,7 +363,13 @@ INY                    ;} Y += 2
 RTS
 }
 
-select_valid_hud_item
+deselect_if_current_item:
+;;; Instruction - check if selected item [[X]] then deselect if it is ;;;
 {
-   LDA    
+   CMP $7E09D2
+   BNE not_same_item ; if not goto after
+   STZ $09D2    ; clear selected item
+   not_same_item:
+   RTS
 }
+

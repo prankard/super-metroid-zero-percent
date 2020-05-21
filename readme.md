@@ -1,6 +1,4 @@
-# Super Metroid Dropoff
-
-Title in progress.
+# Super Metroid Zero Percent
 
 A rom hack where you run the Super Metroid Game starting with full items/health/ammo and have to return everything on the planet zebes.
 
