@@ -120,7 +120,13 @@ decrease_health:
    SEC                    ;|
    SBC $0000,y ; [$84:E93F]  ;} Samus' max health += [[Y]]
    STA $09C4   ; [$7E:09C4]  ;/
-   STA $09C2  ; [$7E:09C2]  ; Samus' health = [Samus' max health]
+   SBC $09C2
+   BPL dont_decrease_current_health
+   LDA $09C4
+   STA $09C2
+dont_decrease_current_health:
+
+;   STA $09C2  ; [$7E:09C2]  ; Samus' health = [Samus' max health]
    JSR check_all_items
    LDA #$0168             ;\
    JSL $82E118 ; [$82:E118]  ;} Play room music track after 6 seconds
@@ -132,6 +138,7 @@ decrease_health:
 
 
    JSL clear_energy_hud
+   STZ $0A06 ; force previous health to be 0, to force redraw
 
    INY                    ;\
    INY                    ;} Y += 2
@@ -188,7 +195,7 @@ pickup_beam_set_spazer_plasma:
    ; todo, toggle spazer when unquipt plasma
 
 check_all_items:
-   JMP check_all_success ; test success
+   ;JMP check_all_success ; test success
    LDA !max_missiles
    BNE check_all_failed
    LDA !max_supers
