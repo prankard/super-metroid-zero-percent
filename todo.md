@@ -26,7 +26,7 @@
 - [ ] speed up fanfare for collecting items
 - [ ] want to have item graphics to be put back (start empty, return full)
 - [ ] have game equip spazer when removing plasma
-- [ ] make health not increase when getting it (too easy)
+- [x] make health not increase when getting it (too easy)
 
 ### Maybe wanted
 
@@ -39,10 +39,10 @@
 
 - [x] When collecting grapple/xray, you can still use it after selection until you change hud index
 - [ ] turn off auto reserve when collecting last reserve tank (to stop icon)
-- [ ] bug - reserve keep on reserving all the time (animates from 100 - 99, then refills back to 100), meaning you can't get rid of them to crystal flash
+- [x] bug - reserve keep on reserving all the time (animates from 100 - 99, then refills back to 100), meaning you can't get rid of them to crystal flash (I'm pretty certain this is a bug with bizhawk, as save file was fine in bsnes accuracy)
 - [x] gravity suit (and probably varia suit) animation plays and messes up with your equipment by re-equipping
-- [ ] bt activates when you have bombs, not when you don't have bombs
-- [ ] 1% completion as due to morphing ball id change
+- [x] bt activates when you have bombs, not when you don't have bombs
+- [x] 1% completion as due to morphing ball id change
 - [x] bomb counter goes up after powerbombs selected
 
 
@@ -79,9 +79,13 @@ http://wiki.metroidconstruction.com/doku.php?id=super:asm_lessons#lesson_2
 Assembly Stylesheet:
 http://wiki.metroidconstruction.com/doku.php?id=super:expert_guides:asm_stylesheet
 
+PLM Reference:
+https://jathys.zophar.net/supermetroid/kejardon/PLM_Details.txt
+
 
 
 ### Assembly References
 New Game Varia: https://github.com/theonlydude/RandomMetroidSolver/blob/master/itemrandomizerweb/patches/new_game.asm
 
 Practice Hack 100%: https://github.com/tewtal/sm_practice_hack/blob/master/src/presets/hundo_data.asm
+

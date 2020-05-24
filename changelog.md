@@ -1,6 +1,8 @@
 0.8.2
 
-- 
+- fixed bt spawn on collect item
+- added right side ws e-tank when disabled 
+- added lower norfair no spin jump activate pillar
 
 0.8.1
 

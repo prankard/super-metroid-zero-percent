@@ -112,9 +112,146 @@ org $91D4E4
 org $8BE634 
    JMP $E67D
 
+   ;test e tank graphics
+   
+org $84E099
+plm_etank:
+;   dw $8724,$EFD3 ; temp jump to draw sprites
+   dw $887C;,$E0BA  ; Go to $E0BA if the room argument item is set
+   dw plm_etank_collected
+   dw $8A24;,$E0B1  ; Link instruction = $E0B1
+   dw plm_etank_collide
+   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
+org $84E0A5
+plm_etank_draw:
+   ;dw $0008,$A2B5   ; draw empty block
+   dw $0104,$A31B  ; draw old empty block
+   dw $8724
+   dw plm_etank_draw
+   ;,$E0A5  ; Go to $E0A5
+org $84E0B1
+plm_etank_collide:
+   dw $8899       ; Set the room argument item
+   dw $8BDD 
+   db $02    ; Clear music queue and queue item fanfare music track
+   dw $8968,$0064  ; Collect 0064h health energy tank
+org $84E0BA
+plm_etank_collected:
+   ;dw $8724,$EFD3 ; temp jump to draw sprites
+   dw $0004,$A2DF  ; draw frame 1
+   dw $0004,$A2E5  ; draw frame 1
+   dw $8724;,$E0BA  ; Go to $E0A5
+   dw plm_etank_collected
+
+
+
+org $84E1E5
+;;; $E1E5: Instruction list - PLM $EEF7 (speed booster) ;;;
+                        dw $8764,$8A00
+                        db $00,$00,$00,$00,$00,$00,$00,$00  ; Load item PLM GFX
+                        dw $887C,$E20F                          ; Go to $E20F if the room argument item is set
+                        dw $8A24,$E205                          ; Link instruction = $E205
+                        dw $86C1,$DF89                          ; Pre-instruction = go to link instruction if triggered
+org $84E1FD
+                        dw $0008,$A2B5   ; draw empty block
+                        ;dw $0004,$A31B  ; draw empty block
+                        dw $8724,$E1FD                          ; Go to $E1FD
+org $84E205
+                        dw $8899                               ; Set the room argument item
+                        dw $8BDD
+                        db $02                            ; Clear music queue and queue item fanfare music track
+                        dw $88F3,$2000
+                        db $0D                       ; Pick up equipment 2000h and display message box 0Dh
+org $84E20F
+                        dw $8724,$EFD3                          ; Go to $DFA97 (jump to draw plm)
+
+
+
+   ; sprite locations
+;etank:
+;a2df = 41695
+;a2e5 = 41701
+;missile:
+;a2eb = 41707
+;a2f1 = 41713
+;super:
+;a2f7 = 41719
+;a2fd = 41725
+;pb:
+;a303 = 41731
+;a309 = 41737
+
+; empty sprite
+;A2B5
+
+;   dw $8724,$DFA9  ; Go to $DFA9 - delete
+
 
 ; Free space bank 84:EFD3-FFFF
 org $84EFD3 
+   dw $001F,$A2D9   ; draw x
+   dw $001F,$A2D3   ; draw x
+   dw $001F,$A2CD   ; draw x
+   dw $001F,$A2C7   ; draw x
+   dw $001F,$A2C1   ; draw x
+   dw $001F,$A2BB   ; draw x
+   dw $001F,$A2B5   ; draw x
+   
+   dw $001F,$A2D9   ; draw x
+   dw $001F,$A2DF   ; draw x
+   dw $001F,$A2E5   ; draw x
+   dw $001F,$A2EB   ; draw x
+   dw $001F,$A2F1   ; draw x
+   dw $001F,$A2F7   ; draw x
+   dw $001F,$A2FD   ; draw x
+   dw $001F,$A303   ; draw x
+   dw $001F,$A309   ; draw x
+
+      dw $001F,$A30F   ; draw x
+   dw $001F,$A315   ; draw x
+   dw $001F,$A31B   ; draw x
+   dw $001F,$A321   ; draw x
+   dw $001F,$A327   ; draw x
+   dw $001F,$A32D   ; draw x
+   dw $001F,$A333   ; draw x
+   dw $001F,$A339   ; draw x
+   dw $001F,$A33F   ; draw x
+   dw $001F,$A345   ; draw x
+   
+   dw $001F,$A34B   ; draw x
+   dw $001F,$A351   ; draw x
+   dw $001F,$A357   ; draw x
+   dw $001F,$A35D   ; draw x
+   dw $001F,$A363   ; draw x
+   dw $001F,$A369   ; draw x
+   dw $001F,$A36F   ; draw x
+   dw $001F,$A375   ; draw x
+   dw $001F,$A37B   ; draw x
+   dw $001F,$A381   ; draw x
+   dw $001F,$A387   ; draw x
+   dw $001F,$A38D   ; draw x
+   dw $001F,$A393   ; draw x
+   dw $001F,$A399   ; draw x
+   dw $001F,$A39F   ; draw x
+   dw $001F,$A3A5   ; draw x
+   dw $001F,$A3AB   ; draw x
+   dw $001F,$A3B1   ; draw x
+   dw $001F,$A3B7   ; draw x
+   dw $001F,$A3BD   ; draw x
+
+;   dw $001F,$A2AF   ; draw x
+;   dw $001F,$A2A9   ; draw x
+;   dw $001F,$A2A3   ; draw x
+;   dw $001F,$A29D   ; draw x
+;   dw $001F,$A297   ; draw x
+;   dw $001F,$A291   ; draw x
+;   dw $001F,$A28B   ; draw x
+;   dw $001F,$A285   ; draw x
+;   dw $001F,$A27F   ; draw x
+;                        dw $E04F                               ; Draw item frame 0
+;                        dw $E067                               ; Draw item frame 1
+                        dw $8724,$EFD3                          ; Go to $DFA97
+
 decrease_health:
    LDA $09C4 ;  [$7E:09C4]  ;\
    SEC                    ;|
@@ -133,7 +270,6 @@ dont_decrease_current_health:
    LDA #$0001             ;\
    JSL $858080 ; [$85:8080]  ;} Display energy tank message box
    ;JSL $809A79 ; init hud again for health ;; this almost works
-
 
 
 
@@ -360,6 +496,11 @@ BPL after_max_reserve  ;} reserve too low
 LDA $09D4              ;\ 
 STA $09D6              ;} Save reseve as max
 after_max_reserve:
+LDA $09D6
+CMP #$0000
+BEQ not_last_reserve
+STZ $09C0
+not_last_reserve:
 LDA #$0168             ;\
 JSL $82E118;[$82:E118]  ;} Play room music track after 6 seconds
 LDA #$0019             ;\
@@ -380,3 +521,61 @@ deselect_if_current_item:
    RTS
 }
 
+
+
+
+
+
+;;; $AF4F: Equipment screen - main - tanks - reserve tank ;;;
+;{
+;$82:AF4F 08          PHP  ; draw
+;$82:AF50 C2 30       REP #$30 ; set draw mode
+;$82:AF52 AD 57 07    LDA $0757  [$7E:0757]  ; load temporary reserve store
+;$82:AF55 D0 14       BNE $14    [$AF6B]     ; if zero
+;$82:AF57 A5 8F       LDA $8F    [$7E:008F]  ; load 008f
+;$82:AF59 89 80 00    BIT #$0080             ; ?
+;$82:AF5C F0 5E       BEQ $5E    [$AFBC]     ; if not zero
+;$82:AF5E AD D6 09    LDA $09D6  [$7E:09D6]  ; load reserve
+;$82:AF61 18          CLC                    ; add mode
+;$82:AF62 69 07 00    ADC #$0007             ; add 7
+;$82:AF65 29 F8 FF    AND #$FFF8             ; and FFF8
+;$82:AF68 8D 57 07    STA $0757  [$7E:0757]  ; save as reserve temp  <- gets called in bug
+;
+;$82:AF6B AD 57 07    LDA $0757  [$7E:0757]  ; load reserve temp
+;$82:AF6E 3A          DEC A                  ; decrease 
+;$82:AF6F 8D 57 07    STA $0757  [$7E:0757]  ; save  <- gets called in bug
+;$82:AF72 29 07 00    AND #$0007             ; check bit 7
+;$82:AF75 C9 07 00    CMP #$0007             ; if it has bit 7
+;$82:AF78 D0 07       BNE $07    [$AF81]     ; if not zero (jump to after sound)
+;$82:AF7A A9 2D 00    LDA #$002D             ;  load sound
+;$82:AF7D 22 4D 91 80 JSL $80914D[$80:914D]  ;} Queue sound 2Dh, sound library 3, max queued sounds allowed = 6
+;
+;$82:AF81 AD C2 09    LDA $09C2  [$7E:09C2]  ; load health
+;$82:AF84 18          CLC                    ; plus mode
+;$82:AF85 6D 04 BF    ADC $BF04  [$82:BF04]  ; add 1
+;$82:AF88 8D C2 09    STA $09C2  [$7E:09C2]  ; save health   <- gets called in bug
+;$82:AF8B CD C4 09    CMP $09C4  [$7E:09C4]  ; compare with max health
+;$82:AF8E 30 08       BMI $08    [$AF98]     ; if we are at max health (else goto AF98) <- this could never get called in bug
+;$82:AF90 AD C4 09    LDA $09C4  [$7E:09C4]  ; load max health
+;$82:AF93 8D C2 09    STA $09C2  [$7E:09C2]  ; save health
+;$82:AF96 80 18       BRA $18    [$AFB0]     ; goto end 
+;
+;$82:AF98 AD D6 09    LDA $09D6  [$7E:09D6]  ; load reserves 
+;$82:AF9B 38          SEC                  
+;$82:AF9C ED 04 BF    SBC $BF04  [$82:BF04]  ; decrease 1
+;$82:AF9F 8D D6 09    STA $09D6  [$7E:09D6]  ; save reserves  <- this never gets called in bug
+;$82:AFA2 F0 0C       BEQ $0C    [$AFB0]     ; if zero, goto end
+;$82:AFA4 10 16       BPL $16    [$AFBC]     ; else goto stop drawing (no zero)
+;$82:AFA6 AD C2 09    LDA $09C2  [$7E:09C2]  ; load health
+;$82:AFA9 18          CLC
+;$82:AFAA 6D D6 09    ADC $09D6  [$7E:09D6]  ; add reserves
+;$82:AFAD 8D C2 09    STA $09C2  [$7E:09C2]  ; save health added reserves
+;
+;:end
+;$82:AFB0 9C D6 09    STZ $09D6  [$7E:09D6]  ; zero reserves  <- this never gets called in bug
+;$82:AFB3 9C 57 07    STZ $0757  [$7E:0757]  ; zero game pause menu position
+;$82:AFB6 20 46 AE    JSR $AE46  [$82:AE46]  ; disable energy arrow glo
+;$82:AFB9 9C 55 07    STZ $0755  [$7E:0755]  ; zero temp reserves
+;
+;$82:AFBC 28          PLP
+;$82:AFBD 60          RTS
