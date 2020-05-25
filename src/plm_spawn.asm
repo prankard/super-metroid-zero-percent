@@ -52,19 +52,19 @@ plm_lists2:
      dw $0004
      
      ; reserve booster
-     dw $EF27
+     dw $EF7B
      db $38, $48
      dw $0004
      ; reserve booster
-     dw $EF27
+     dw $EF7B
      db $39, $48
      dw $0004
      ; reserve booster
-     dw $EF27
+     dw $EF7B
      db $3A, $48
      dw $0004
-     ; reserve booster
-     dw $EF27
+     ; moprhing ball
+     dw $EF23
      db $3B, $48
      dw $0004
      

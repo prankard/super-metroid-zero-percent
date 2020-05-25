@@ -1,6 +1,37 @@
 arch snes.cpu
 lorom
 
+; macros
+macro plm_chozo(gfx, collect_code)
+{
+   ?plm_chozo:
+   ;;; $E8D7: Instruction list - PLM $EF7B (reserve tank, chozo orb) ;;;
+   {
+      <gfx>                                          ; Load item PLM GFX
+      dw $887C,?plm_chozo_collected                 ; Go to $E90B if the room argument item is set
+      dw $8A2E,$DFAF                                       ; Call $DFAF (item orb)
+      dw $8A2E,$DFC7                                       ; Call $DFC7 (item orb burst)
+      dw $8A24,?plm_chozo_collide                   ; Link instruction = plm_reserve_chozo_collide
+      dw $86C1,$DF89                                       ; Pre-instruction = go to link instruction if triggered
+      dw $874E : db $16                                    ; Timer = 16h
+   ?plm_chozo_draw:
+      ;dw $E04F                               ; Draw item frame 0
+      ;dw $E067                               ; Draw item frame 1
+      dw $0104,$A31B  ; draw old empty block
+      dw $8724,?plm_chozo_draw        ; Go to plm_reserve_chozo_draw
+   ?plm_chozo_collide:
+      dw $8899                               ; Set the room argument item
+      dw $E04F                               ; Draw item frame 0
+      dw $8BDD : db $02                      ; Clear music queue and queue item fanfare music track
+      <collect_code>
+   ?plm_chozo_collected:
+      dw $8724,draw_orb                      ; goto draw orb
+      ;dw $0001,$A2B5                        ; draw blank frame (or frame in memory)
+      ;dw $86BC                               ; Delete
+   }
+}
+endmacro
+
 ; defines
 !max_missiles = $09C8
 !missiles = $09C6
@@ -113,58 +144,240 @@ org $8BE634
    JMP $E67D
 
    ;test e tank graphics
+
+   
+;     Item        	NormalHiddenChozo
+; [ ] Morph Ball	   Yes	No	   No
+; [x] Bomb	         No	   No	   Yes <- we can't modify bomb
+; [x] Charge Beam	   No	   No	   Yes
+; [x] Spazer         No	   No	   Yes
+; [ ] Varia Suit	   No	   No	   Yes
+; [x] Hi-Jump Boots	No	   No	   Yes
+; [ ] Speed Booster	No	   No	   Yes
+; [ ] Wave Beam	   No	   No	   Yes
+; [ ] Grapple Beam	No	   No	   Yes
+; [ ] Gravity Suit	No	   No	   Yes
+; [ ] Space Jump	   No	   No	   Yes
+; [ ] Spring Ball	   No	   No	   Yes
+; [ ] Plasma Beam	   No	   No	   Yes
+; [ ] Ice Beam	      No	   No	   Yes
+; [ ] Screw Attack	No	   No	   Yes
+; [ ] X-Ray Scope 	No	   No	   Yes
+; [ ] Missile	      Yes	Yes	Yes
+; [ ] Super Missile	Yes	Yes	Yes
+; [ ] Power Bomb	   Yes	No	   Yes
+; [o] Energy Tank	   #Yes	Yes	No
+; [x] Reserve Tank	No 	No    Yes
+
    
 org $84E099
 plm_etank:
+{
 ;   dw $8724,$EFD3 ; temp jump to draw sprites
-   dw $887C;,$E0BA  ; Go to $E0BA if the room argument item is set
-   dw plm_etank_collected
-   dw $8A24;,$E0B1  ; Link instruction = $E0B1
-   dw plm_etank_collide
+   dw $887C,plm_etank_collected;,$E0BA  ; Go to $E0BA if the room argument item is set
+   dw $8A24,plm_etank_collide  ; Link instruction = plm_etank_collide
    dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
-org $84E0A5
 plm_etank_draw:
    ;dw $0008,$A2B5   ; draw empty block
    dw $0104,$A31B  ; draw old empty block
-   dw $8724
-   dw plm_etank_draw
+   dw $8724,plm_etank_draw ; goto plm_etank_draw
    ;,$E0A5  ; Go to $E0A5
-org $84E0B1
 plm_etank_collide:
    dw $8899       ; Set the room argument item
-   dw $8BDD 
-   db $02    ; Clear music queue and queue item fanfare music track
+   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
    dw $8968,$0064  ; Collect 0064h health energy tank
-org $84E0BA
 plm_etank_collected:
-   ;dw $8724,$EFD3 ; temp jump to draw sprites
-   dw $0004,$A2DF  ; draw frame 1
-   dw $0004,$A2E5  ; draw frame 1
-   dw $8724;,$E0BA  ; Go to $E0A5
-   dw plm_etank_collected
+   dw $8724,draw_etank
+   ;dw $8724,test_draw_plm_sprites ; temp jump to draw sprites
+   ;dw $0004,$A2DF  ; draw frame 1
+   ;dw $0004,$A2E5  ; draw frame 1
+   ;dw $8724,plm_etank_collected;,$E0BA  ; Go to plm_etank_collected
+}
 
+org $84E0BE
+plm_missile:
+;;; $E0BE: Instruction list - PLM $EEDB (missile tank) ;;;
+{
+   dw $887C,plm_missile_collected  ; Go to $E0DF if the room argument item is set
+   dw $8A24,plm_missile_collide  ; Link instruction = plm_missile_collide
+   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
+plm_missile_draw:
+   dw $0104,$A31B  ; draw old empty block
+   dw $8724,plm_missile_draw ; goto plm_etank_draw
+plm_missile_collide:
+   dw $8899       ; Set the room argument item
+   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
+   dw $89A9,$0005  ; Collect 0005h ammo missile tank
+plm_missile_collected:
+   dw $8724,draw_missile
+   ;dw $8724,$DFA9  ; Go to $DFA9 (delete)
+}
+
+org $84E0E3 
+plm_supers:
+;;; $E0E3: Instruction list - PLM $EEDF (super missile tank) ;;;
+{
+   dw $887C,plm_supers_collected  ; Go to $E104 if the room argument item is set
+   dw $8A24,plm_supers_collide  ; Link instruction = $E0FB
+   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
+plm_supers_draw:
+   dw $0104,$A31B  ; draw old empty block
+   dw $8724,plm_supers_draw ; goto plm_etank_draw
+plm_supers_collide:
+   dw $8899       ; Set the room argument item
+   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
+   dw $89D2,$0005  ; Collect 0005h ammo super missile tank
+plm_supers_collected:
+   dw $8724,draw_supers
+}
+
+
+org $84E108
+;;; $E108: Instruction list - PLM $EEE3 (power bomb tank) ;;;
+plm_pbs:
+{
+   dw $887C,plm_pbs_collected  ; Go to $E129 if the room argument item is set
+   dw $8A24,plm_pbs_collide  ; Link instruction = plm_pbs_collide
+   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
+plm_pbs_draw:
+   dw $0104,$A31B  ; draw old empty block
+   dw $8724,plm_pbs_draw ; goto plm_pbs_draw
+plm_pbs_collide:
+   dw $8899       ; Set the room argument item
+   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
+   dw $89FB,$0005  ; Collect 0005h ammo power bomb tank
+plm_pbs_collected:
+   dw $8724,draw_pb
+}
+
+
+org $84E3EF
+;;; $E3EF: Instruction list - PLM $EF23 (morph ball) ;;;
+{
+plm_morph:
+   dw $8764,$8700 : db $00,$00,$00,$00,$00,$00,$00,$00  ; Load item PLM GFX
+   dw $887C,plm_morph_collected                          ; Go to plm_morph_collected if the room argument item is set
+   dw $8A24,$E40F                          ; Link instruction = $E40F
+   dw $86C1,$DF89                          ; Pre-instruction = go to link instruction if triggered
+plm_morph_draw:
+   dw $0004,$A31B  ; draw old empty block
+   dw $8724,plm_morph_draw                          ; Go to plm_morph_draw
+plm_morph_collide:
+   dw $8899                               ; Set the room argument item
+   dw $8BDD : db $02                            ; Clear music queue and queue item fanfare music track
+   dw $88F3,$0004 : db $09                       ; Pick up equipment 0004h and display message box 09h
+plm_morph_collected:
+   ;dw $8724,$DFA9                          ; Go to $DFA9 (delete)
+   dw $8724,draw_plm_sprites                          ; Go to $DFA9 (delete)
+}
 
 
 org $84E1E5
 ;;; $E1E5: Instruction list - PLM $EEF7 (speed booster) ;;;
-                        dw $8764,$8A00
-                        db $00,$00,$00,$00,$00,$00,$00,$00  ; Load item PLM GFX
-                        dw $887C,$E20F                          ; Go to $E20F if the room argument item is set
-                        dw $8A24,$E205                          ; Link instruction = $E205
-                        dw $86C1,$DF89                          ; Pre-instruction = go to link instruction if triggered
-org $84E1FD
-                        dw $0008,$A2B5   ; draw empty block
-                        ;dw $0004,$A31B  ; draw empty block
-                        dw $8724,$E1FD                          ; Go to $E1FD
-org $84E205
+{
+plm_speed_booster:
+   dw $8764,$8A00 : db $00,$00,$00,$00,$00,$00,$00,$00  ; Load item PLM GFX
+   dw $887C,plm_speed_booster_collected                          ; Go to plm_speed_booster_collected if the room argument item is set
+   dw $8A24,plm_speed_booster_collide                          ; Link instruction = plm_speed_booster_collide
+   dw $86C1,$DF89                          ; Pre-instruction = go to link instruction if triggered
+plm_speed_booster_draw:
+                        ;dw $0008,$A2B5   ; draw empty block
+                        dw $0004,$A31B  ; draw old empty block
+                        dw $8724,plm_speed_booster_draw                          ; Go to plm_speed_booster_draw
+plm_speed_booster_collide:
                         dw $8899                               ; Set the room argument item
-                        dw $8BDD
-                        db $02                            ; Clear music queue and queue item fanfare music track
-                        dw $88F3,$2000
-                        db $0D                       ; Pick up equipment 2000h and display message box 0Dh
-org $84E20F
-                        dw $8724,$EFD3                          ; Go to $DFA97 (jump to draw plm)
+                        dw $8BDD : db $02                            ; Clear music queue and queue item fanfare music track
+                        dw $88F3,$2000 : db $0D                       ; Pick up equipment 2000h and display message box 0Dh
+plm_speed_booster_collected:
+                        dw $8724,draw_plm_sprites                          ; Go to draw_plm_sprites 
+}
 
+
+
+;; orbs to go here
+
+
+
+org $84E8D7
+;;; $E8D7: Instruction list - PLM $EF7B (reserve tank, chozo orb) ;;;
+%plm_chozo("dw $8764,$9000 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $8986,$0064")
+
+org $84E54D
+;;; $E54D: Instruction list - PLM $EF3F (charge beam, chozo orb) ;;;
+%plm_chozo("dw $8764,$8B00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88B0,$1000 : db $0E")
+
+org $84E588
+;; $E588: Instruction list - PLM $EF43 (ice beam, chozo orb) ;;;
+%plm_chozo("dw $8764,$8C00 : db $00,$03,$00,$00,$00,$03,$00,$00", "dw $88B0,$0002 : db $0F")
+
+org $84E5C3
+;;; $E5C3: Instruction list - PLM $EF47 (hi-jump, chozo orb) ;;;
+%plm_chozo("dw $8764,$8400 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0100 : db $0B")
+
+;;; $E5C3: Instruction list - PLM $EF47 (hi-jump, chozo orb) ;;;
+;{
+;org $84E5C3
+;             dw $8764,$8400,$00,$00,$00,$00,$00,$00,$00,$00  ; Load item PLM GFX
+;                        dw $887C,$E5F8                          ; Go to $E5F8 if the room argument item is set
+;                        dw $8A2E,$DFAF                          ; Call $DFAF (item orb)
+;                        dw $8A2E,$DFC7                          ; Call $DFC7 (item orb burst)
+;                        dw $8A24,$E5EE                          ; Link instruction = $E5EE
+;                        dw $86C1,$DF89                          ; Pre-instruction = go to link instruction if triggered
+;                        dw $874E : db $16                            ; Timer = 16h
+;org $84E5E6
+;             dw $E04F                               ; Draw item frame 0
+;                       dw $E067                               ; Draw item frame 1
+;                       dw $8724,$E5E6                          ; Go to $E5E6
+;org $84E5EE
+;             dw $8899                               ; Set the room argument item
+;                        dw $8BDD : db $02                            ; Clear music queue and queue item fanfare music track
+;                        dw $88F3,$0100 : db $0B                       ; Pick up equipment 0100h and display message box 0Bh
+;org $84E5F8
+;             dw $0001,$A2B5
+;                        dw $86BC                                ; Delete
+;}
+
+
+org $84E5FE
+;;; $E5FE: Instruction list - PLM $EF4B (speed booster, chozo orb) ;;;
+%plm_chozo("dw $8764,$8A00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$2000 : db $0D")
+
+org $84E642
+;;; $E642: Instruction list - PLM $EF4F (wave beam, chozo orb) ;;;
+%plm_chozo("dw $8764,$8D00 : db $00,$02,$00,$00,$00,$02,$00,$00", "dw $88B0,$0001 : db $10")
+
+org $84E67D
+;;; $E67D: Instruction list - PLM $EF53 (spazer beam, chozo orb) ;;;
+%plm_chozo("dw $8764,$8F00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88B0,$0004 : db $11")
+
+;;; Shot Blocks
+
+
+
+;;; $E949: Instruction list - PLM $EF83 (missile tank, shot block) ;;;
+plm_shot_missile:
+org $84E949
+{
+   dw $8A2E,$E007  ; Call $E007 (item shot block)
+   dw $887C,plm_show_missile_collected  ; Go to $E979 if the room argument item is set
+   dw $8A24,plm_show_missile_collide  ; Link instruction = $E970
+   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
+   dw $874E : db $16    ; Timer = 16h
+plm_show_missile_draw:
+   dw $0004,$A2EB
+   dw $0004,$A2F1
+   dw $873F,plm_show_missile_draw  ; Decrement timer and go to $E95C if non-zero
+   dw $8A2E,$E020  ; Call $E020 (item shot block reconcealing)
+   dw $8724,$E949  ; Go to $E949
+plm_show_missile_collide:
+   db $8899       ; Set the room argument item
+   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
+   dw $89A9,$0005  ; Collect 0005h ammo missile tank
+plm_show_missile_collected:
+   dw $8A2E,$E032  ; Call $E032 (empty item shot block reconcealing)
+   ;dw $8724,plm_shot_missile  ; Go to $E949 
+   dw $8724,$DFA9                          ; Go to $DFA9 (delete)
+}
 
 
    ; sprite locations
@@ -189,6 +402,40 @@ org $84E20F
 
 ; Free space bank 84:EFD3-FFFF
 org $84EFD3 
+draw_plm_sprites:
+   dw $E04F                               ; Draw item frame 0
+   dw $E067                               ; Draw item frame 1
+   dw $8724,draw_plm_sprites              ; Go to draw_plm_graphic
+
+draw_orb:
+   dw $0014,$A2C7
+   dw $000A,$A2CD
+   dw $0014,$A2D3
+   dw $000A,$A2CD
+   dw $8724,draw_orb   ; Go to draw_orb
+
+draw_etank:
+   ;dw $8724,test_draw_plm_sprites ; temp jump to draw sprites
+   dw $0004,$A2DF  ; draw frame 1
+   dw $0004,$A2E5  ; draw frame 1
+   dw $8724,draw_etank;,$E0BA  ; Go to plm_etank_collected
+
+draw_missile:
+   dw $0004,$A2EB
+   dw $0004,$A2F1
+   dw $8724,draw_missile  ; Go to draw_missile
+
+draw_supers:
+   dw $0004,$A2F7
+   dw $0004,$A2FD
+   dw $8724,draw_supers  ; Go to draw_super_missile
+
+draw_pb:
+   dw $0004,$A303
+   dw $0004,$A309
+   dw $8724,draw_pb  ; Go to draw_pb
+
+test_draw_plm_sprites:
    dw $001F,$A2D9   ; draw x
    dw $001F,$A2D3   ; draw x
    dw $001F,$A2CD   ; draw x
@@ -250,7 +497,7 @@ org $84EFD3
 ;   dw $001F,$A27F   ; draw x
 ;                        dw $E04F                               ; Draw item frame 0
 ;                        dw $E067                               ; Draw item frame 1
-                        dw $8724,$EFD3                          ; Go to $DFA97
+                        dw $8724,test_draw_plm_sprites                          ; Go to $DFA97
 
 decrease_health:
    LDA $09C4 ;  [$7E:09C4]  ;\
