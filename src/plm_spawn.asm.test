@@ -37,9 +37,9 @@ plm_lists:
 
 plm_lists2:
     ;; energy
-     dw $EED7
-     db $3C, $4A
-     dw $0032
+;     dw $EED7
+;     db $3C, $4A
+;     dw $0032
      
      ; morhping ball
      ;dw $EF23
@@ -47,9 +47,9 @@ plm_lists2:
      ;dw $0004
      
      ; speed booster
-     dw $EEF7
-     db $36, $4A
-     dw $0004
+;     dw $EEF7
+;     db $36, $4A
+;     dw $0004
      
      ; reserve booster
      dw $EF7B
@@ -63,10 +63,14 @@ plm_lists2:
      dw $EF7B
      db $3A, $48
      dw $0004
-     ; moprhing ball
-     dw $EF23
+     ; reserve tank
+     dw $EF7B
      db $3B, $48
      dw $0004
+     ; moprhing ball
+;     dw $EF23
+;     db $3B, $48
+ ;    dw $0004
      
      dw $0000
 

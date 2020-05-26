@@ -24,7 +24,7 @@
 - [x] remove missile/supermissile/powerbomb icons when complete
 - [x] turn on auto reserves by default
 - [ ] speed up fanfare for collecting items
-- [ ] want to have item graphics to be put back (start empty, return full)
+- [x] want to have item graphics to be put back (start empty, return full)
 - [ ] have game equip spazer when removing plasma
 - [x] make health not increase when getting it (too easy)
 
@@ -38,7 +38,7 @@
 ### Bugs
 
 - [x] When collecting grapple/xray, you can still use it after selection until you change hud index
-- [ ] turn off auto reserve when collecting last reserve tank (to stop icon)
+- [x] turn off auto reserve when collecting last reserve tank (to stop icon)
 - [x] bug - reserve keep on reserving all the time (animates from 100 - 99, then refills back to 100), meaning you can't get rid of them to crystal flash (I'm pretty certain this is a bug with bizhawk, as save file was fine in bsnes accuracy)
 - [x] gravity suit (and probably varia suit) animation plays and messes up with your equipment by re-equipping
 - [x] bt activates when you have bombs, not when you don't have bombs

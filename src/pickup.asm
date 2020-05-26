@@ -1,6 +1,10 @@
 arch snes.cpu
 lorom
 
+;;; **************
+;;; Macros
+;;; **************
+
 macro plm_chozo(gfx, collect_code, draw_code)
 {
    ?plm_chozo:
@@ -32,7 +36,39 @@ macro plm_chozo(gfx, collect_code, draw_code)
 }
 endmacro
 
-; defines
+macro plm_shot(frame, collect_code)
+{
+   ?plm_shot:
+   {
+      dw $8A2E,$E007  ; Call $E007 (item shot block)
+      dw $887C,?plm_shot_collected  ; Go to $E979 if the room argument item is set
+      dw $8A24,?plm_shot_collide  ; Link instruction = $E970
+      dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
+      dw $874E : db $16    ; Timer = 16h
+   ?plm_shot_draw:
+      dw $0004,$A31B  ; draw old empty block
+      ;dw $0004,$A2EB ; old draw code frame 1
+      ;dw $0004,$A2F1 ; old draw code frame 2
+      dw $873F,?plm_shot_draw  ; Decrement timer and go to $E95C if non-zero
+      dw $8A2E,$E020  ; Call $E020 (item shot block reconcealing)
+      dw $8724,?plm_shot  ; Go to $E949
+   ?plm_shot_collide:
+      dw $8899       ; Set the room argument item
+      dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
+      <collect_code>
+   ?plm_shot_collected:
+      dw $000F,<frame> ; draw first frame of real item
+      dw $8A2E,$E020  ; Call $E020 (item shot block reconcealing)
+      ;dw $8A2E,$E032  ; Call $E032 (empty item shot block reconcealing)
+      dw $8724,?plm_shot  ; Go to $E949 
+   }
+}
+endmacro
+
+;;; **************
+;;; Defines
+;;; **************
+
 !max_missiles = $09C8
 !missiles = $09C6
 !max_supers = $09CC
@@ -49,18 +85,17 @@ endmacro
 !health = $09C2
 
 
-
-;; Code in bank 84
-
-;; flip plm enable disabled
-;org $84861A
-;   JSR $8DAA ; draw
-   ;JMP $861D ; jmp to end ;
-
+;;; **************
+;;; Bank 84
+;;; **************
 
 ;; Stop missile hud from doing nothing at zero
 ;org $8099DF
 ;   JMP $8099E1
+
+;;; **************
+;;; Unequip/Minus when collected
+;;; **************
 
 ; beams
 org $8488B3
@@ -82,7 +117,7 @@ org $8488FF
 org $848905
    JMP collect_equipment
 
-; grapple (need to remove from tilemap)
+; grapple
 org $84891D
    EOR $0000,y 
 org $848926
@@ -90,10 +125,10 @@ org $848926
 org $84892C
    JMP collect_grapple
 
-; xray (need to remove from tilemap)
+; xray 
 org $848944
    EOR $0000,y 
-org $848926
+org $84894D
    EOR $0000,y
 org $848953
    JMP collect_xray
@@ -133,15 +168,10 @@ org $8489FE
 org $848A05
    JMP check_power_bombs
 
-; skip gravity animation
-org $91D5BA 
-   RTL
-org $91D4E4 
-   RTL
-
-; force 0% credits
-org $8BE634 
-   JMP $E67D
+   
+;;; **************
+;;; Unequip/Minus when collected
+;;; **************
 
    ;test e tank graphics
 
@@ -166,151 +196,73 @@ org $8BE634
 ; [-] Ice Beam	      No	   No	   Yes
 ; [x] Screw Attack	No	   No	   Yes
 ; [-] X-Ray Scope 	No	   No	   Yes
-; [o] Missile	      #Yes	Yes	#Yes
-; [o] Super Missile	#Yes	Yes	#Yes
+; [x] Missile	      #Yes	#Yes	#Yes
+; [-] Super Missile	#Yes	#Yes	#Yes
 ; [x] Power Bomb	   Yes	No	   Yes
-; [o] Energy Tank	   #Yes	Yes	No
+; [-] Energy Tank	   #Yes	#Yes	No
 ; [x] Reserve Tank	No 	No    Yes
+
+
+macro plm(gfx, collect_code, draw_code)
+{
+?plm:
+   <gfx>
+   dw $887C,?plm_collected;,$E0BA  ; Go to $E0BA if the room argument item is set
+   dw $8A24,?plm_collide  ; Link instruction = plm_etank_collide
+   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
+?plm_draw:
+   ;dw $0008,$A2B5   ; draw empty block
+   dw $0104,$A31B  ; draw old empty block
+   dw $8724,?plm_draw ; goto plm_etank_draw
+?plm_collide:
+   dw $8899       ; Set the room argument item
+   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
+   <collect_code>
+?plm_collected:
+   <draw_code>
+}
+endmacro
 
    
 org $84E099
-plm_etank:
-{
-;   dw $8724,$EFD3 ; temp jump to draw sprites
-   dw $887C,plm_etank_collected;,$E0BA  ; Go to $E0BA if the room argument item is set
-   dw $8A24,plm_etank_collide  ; Link instruction = plm_etank_collide
-   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
-plm_etank_draw:
-   ;dw $0008,$A2B5   ; draw empty block
-   dw $0104,$A31B  ; draw old empty block
-   dw $8724,plm_etank_draw ; goto plm_etank_draw
-   ;,$E0A5  ; Go to $E0A5
-plm_etank_collide:
-   dw $8899       ; Set the room argument item
-   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
-   dw $8968,$0064  ; Collect 0064h health energy tank
-plm_etank_collected:
-   dw $8724,draw_etank
-   ;dw $8724,test_draw_plm_sprites ; temp jump to draw sprites
-   ;dw $0004,$A2DF  ; draw frame 1
-   ;dw $0004,$A2E5  ; draw frame 1
-   ;dw $8724,plm_etank_collected;,$E0BA  ; Go to plm_etank_collected
-}
+;;; $E099: Instruction list - PLM $EED7 (energy tank) ;;;
+%plm("", "dw $8968,$0064", "dw $8724,draw_etank")
 
 org $84E0BE
-plm_missile:
 ;;; $E0BE: Instruction list - PLM $EEDB (missile tank) ;;;
-{
-   dw $887C,plm_missile_collected  ; Go to $E0DF if the room argument item is set
-   dw $8A24,plm_missile_collide  ; Link instruction = plm_missile_collide
-   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
-plm_missile_draw:
-   dw $0104,$A31B  ; draw old empty block
-   dw $8724,plm_missile_draw ; goto plm_etank_draw
-plm_missile_collide:
-   dw $8899       ; Set the room argument item
-   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
-   dw $89A9,$0005  ; Collect 0005h ammo missile tank
-plm_missile_collected:
-   dw $8724,draw_missile
-   ;dw $8724,$DFA9  ; Go to $DFA9 (delete)
-}
+%plm("", "dw $89A9,$0005", "dw $8724,draw_missile")
 
 org $84E0E3 
-plm_supers:
 ;;; $E0E3: Instruction list - PLM $EEDF (super missile tank) ;;;
-{
-   dw $887C,plm_supers_collected  ; Go to $E104 if the room argument item is set
-   dw $8A24,plm_supers_collide  ; Link instruction = $E0FB
-   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
-plm_supers_draw:
-   dw $0104,$A31B  ; draw old empty block
-   dw $8724,plm_supers_draw ; goto plm_etank_draw
-plm_supers_collide:
-   dw $8899       ; Set the room argument item
-   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
-   dw $89D2,$0005  ; Collect 0005h ammo super missile tank
-plm_supers_collected:
-   dw $8724,draw_supers
-}
-
+%plm("", "dw $89D2,$0005", "dw $8724,draw_supers")
 
 org $84E108
 ;;; $E108: Instruction list - PLM $EEE3 (power bomb tank) ;;;
-plm_pbs:
-{
-   dw $887C,plm_pbs_collected  ; Go to $E129 if the room argument item is set
-   dw $8A24,plm_pbs_collide  ; Link instruction = plm_pbs_collide
-   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
-plm_pbs_draw:
-   dw $0104,$A31B  ; draw old empty block
-   dw $8724,plm_pbs_draw ; goto plm_pbs_draw
-plm_pbs_collide:
-   dw $8899       ; Set the room argument item
-   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
-   dw $89FB,$0005  ; Collect 0005h ammo power bomb tank
-plm_pbs_collected:
-   dw $8724,draw_pb
-}
-
+%plm("", "dw $89FB,$0005", "dw $8724,draw_pb")
 
 org $84E3EF
 ;;; $E3EF: Instruction list - PLM $EF23 (morph ball) ;;;
-{
-plm_morph:
-   dw $8764,$8700 : db $00,$00,$00,$00,$00,$00,$00,$00  ; Load item PLM GFX
-   dw $887C,plm_morph_collected                          ; Go to plm_morph_collected if the room argument item is set
-   dw $8A24,$E40F                          ; Link instruction = $E40F
-   dw $86C1,$DF89                          ; Pre-instruction = go to link instruction if triggered
-plm_morph_draw:
-   dw $0004,$A31B  ; draw old empty block
-   dw $8724,plm_morph_draw                          ; Go to plm_morph_draw
-plm_morph_collide:
-   dw $8899                               ; Set the room argument item
-   dw $8BDD : db $02                            ; Clear music queue and queue item fanfare music track
-   dw $88F3,$0004 : db $09                       ; Pick up equipment 0004h and display message box 09h
-plm_morph_collected:
-   ;dw $8724,$DFA9                          ; Go to $DFA9 (delete)
-   dw $8724,draw_plm_sprites                          ; Go to $DFA9 (delete)
-}
+%plm("dw $8764,$8700 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0004 : db $09", "dw $8724,draw_plm_sprites")
 
-
-org $84E1E5
+; this speed booster not needed
+;org $84E1E5
 ;;; $E1E5: Instruction list - PLM $EEF7 (speed booster) ;;;
-{
-plm_speed_booster:
-   dw $8764,$8A00 : db $00,$00,$00,$00,$00,$00,$00,$00  ; Load item PLM GFX
-   dw $887C,plm_speed_booster_collected                          ; Go to plm_speed_booster_collected if the room argument item is set
-   dw $8A24,plm_speed_booster_collide                          ; Link instruction = plm_speed_booster_collide
-   dw $86C1,$DF89                          ; Pre-instruction = go to link instruction if triggered
-plm_speed_booster_draw:
-                        ;dw $0008,$A2B5   ; draw empty block
-                        dw $0004,$A31B  ; draw old empty block
-                        dw $8724,plm_speed_booster_draw                          ; Go to plm_speed_booster_draw
-plm_speed_booster_collide:
-                        dw $8899                               ; Set the room argument item
-                        dw $8BDD : db $02                            ; Clear music queue and queue item fanfare music track
-                        dw $88F3,$2000 : db $0D                       ; Pick up equipment 2000h and display message box 0Dh
-plm_speed_booster_collected:
-                        dw $8724,draw_plm_sprites                          ; Go to draw_plm_sprites 
-}
-
-
+;%plm("dw $8764,$8A00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$2000 : db $0D", "dw $8724,draw_plm_sprites")
 
 ;; orbs to go here
 
 
 org $84E47C
 ;;; $E47C: Instruction list - PLM $EF2F (missile tank, chozo orb) ;;;
-%plm_chozo("", "dw $89A9,0005", "dw $0004,$A2EB")
+%plm_chozo("", "dw $89A9,$0005", "dw $0004,$A2EB")
 
 org $84E4AE
 ;;; $E4AE: Instruction list - PLM $EF33 (super missile tank, chozo orb) ;;;
-%plm_chozo("", "dw $89D2,0005", "dw $0004,$A2F7")
+%plm_chozo("", "dw $89D2,$0005", "dw $0004,$A2F7")
 
 org $84E4E0
 ;;; $E4E0: Instruction list - PLM $EF37 (power bomb tank, chozo orb) ;;;
-%plm_chozo("", "dw $89FB,0005", "dw $0004,$A303")
+%plm_chozo("", "dw $89FB,$0005", "dw $0004,$A303")
 
 org $84E54D
 ;;; $E54D: Instruction list - PLM $EF3F (charge beam, chozo orb) ;;;
@@ -338,35 +290,35 @@ org $84E67D
 
 org $84E6B8
 ;;; $E6B8: Instruction list - PLM $EF57 (spring ball, chozo orb) ;;;
-%plm_chozo("dw $8764,$8200 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,0002 : db $08", "dw $E04F")
+%plm_chozo("dw $8764,$8200 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0002 : db $08", "dw $E04F")
 
 org $84E6F3
 ;;; $E6F3: Instruction list - PLM $EF5B (varia suit, chozo orb) ;;;
-%plm_chozo("dw $8764,$8300 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,0001 : db $07", "dw $E04F")
+%plm_chozo("dw $8764,$8300 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0001 : db $07", "dw $E04F")
 
 org $84E735
 ;;; $E735: Instruction list - PLM $EF5F (gravity suit, chozo orb) ;;;
-%plm_chozo("dw $8764,$8100 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,0020 : db $1A", "dw $E04F")
+%plm_chozo("dw $8764,$8100 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0020 : db $1A", "dw $E04F")
 
 org $84E777                        
 ;;; $E777: Instruction list - PLM $EF63 (x-ray scope, chozo orb) ;;;
-%plm_chozo("dw $8764,$8900 : db $01,$01,$00,$00,$03,$03,$00,$00", "dw $8941,8000", "dw $E04F")
+%plm_chozo("dw $8764,$8900 : db $01,$01,$00,$00,$03,$03,$00,$00", "dw $8941,$8000", "dw $E04F")
 
 org $84E7B1                        
 ;;; $E7B1: Instruction list - PLM $EF67 (plasma beam, chozo orb) ;;;
-%plm_chozo("dw $8764,$8E00 : db $00,$01,$00,$00,$00,$01,$00,$00", "dw $88B0,0008 : db $12", "dw $E04F")
+%plm_chozo("dw $8764,$8E00 : db $00,$01,$00,$00,$00,$01,$00,$00", "dw $88B0,$0008 : db $12", "dw $E04F")
 
 org $84E7EC                        
 ;;; $E7EC: Instruction list - PLM $EF6B (grapple beam, chozo orb) ;;;
-%plm_chozo("dw $8764,$8800 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $891A,4000", "dw $E04F")
+%plm_chozo("dw $8764,$8800 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $891A,$4000", "dw $E04F")
 
 org $84E826
 ;;; $E826: Instruction list - PLM $EF6F (space jump, chozo orb) ;;;
-%plm_chozo("dw $8764,$8600 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,0200 : db $0C", "dw $E04F")
+%plm_chozo("dw $8764,$8600 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0200 : db $0C", "dw $E04F")
          
 org $84E861               
 ;;; $E861: Instruction list - PLM $EF73 (screw attack, chozo orb) ;;;
-%plm_chozo("dw $8764,$8500 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,0008 : db $0A", "dw $E04F")
+%plm_chozo("dw $8764,$8500 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0008 : db $0A", "dw $E04F")
                         
 org $84E8D7
 ;;; $E8D7: Instruction list - PLM $EF7B (reserve tank, chozo orb) ;;;
@@ -375,34 +327,17 @@ org $84E8D7
 
 ;;; Shot Blocks
 
+org $84E911
+;;; $E911: Instruction list - PLM $EF7F (energy tank, shot block) ;;;
+%plm_shot($A2DF, "dw $8968,$0064")
 
-;; This code breaks everything!
-
-;;; $E949: Instruction list - PLM $EF83 (missile tank, shot block) ;;;
 org $84E949
-plm_shot_missile:
-{
-   dw $8A2E,$E007  ; Call $E007 (item shot block)
-   dw $887C,plm_show_missile_collected  ; Go to $E979 if the room argument item is set
-   dw $8A24,plm_show_missile_collide  ; Link instruction = $E970
-   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
-   dw $874E : db $16    ; Timer = 16h
-plm_show_missile_draw:
-   dw $0004,$A2EB
-   dw $0004,$A2F1
-   dw $873F,plm_show_missile_draw  ; Decrement timer and go to $E95C if non-zero
-   dw $8A2E,$E020  ; Call $E020 (item shot block reconcealing)
-   dw $8724,plm_shot_missile  ; Go to $E949
-plm_show_missile_collide:
-   db $8899       ; Set the room argument item
-   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
-   dw $89A9,$0005  ; Collect 0005h ammo missile tank
-plm_show_missile_collected:
-   dw $8A2E,$E032  ; Call $E032 (empty item shot block reconcealing)
-   dw $8724,plm_shot_missile  ; Go to $E949 
-   ;dw $8724,$DFA9                          ; Go to $DFA9 (delete)
-}
+;;; $E949: Instruction list - PLM $EF83 (missile tank, shot block) ;;;
+%plm_shot($A2EB, "dw $89A9,$0005")
 
+org $84E981
+;;; $E981: Instruction list - PLM $EF87 (super missile tank, shot block) ;;;
+%plm_shot($A2F7, "dw $89D2,$0005")
 
    ; sprite locations
 ;etank:
@@ -424,7 +359,11 @@ plm_show_missile_collected:
 ;   dw $8724,$DFA9  ; Go to $DFA9 - delete
 
 
+;;; **************
+;;; Free Space Functions/Jumps
+;;; **************
 ; Free space bank 84:EFD3-FFFF
+
 org $84EFD3 
 draw_plm_sprites:
    dw $E04F                               ; Draw item frame 0
@@ -642,23 +581,6 @@ collect_xray:
    JSR deselect_if_current_item
    JMP $8957
 
-;;; $9A3E: Add x-ray to HUD tilemap ;;;
-{
-   ; Called by:
-   ;     $9A79: Initialise HUD
-   ;     $84:8941: Instruction - pick up equipment [[Y]], add x-ray to HUD and display x-ray message box
-   ;     $91:E355: Debug. Give ammo, all items and switch to next beam configuration if newly pressed B
-   PHP
-   PHX
-   PHY
-   PHB
-   PHK                ;\
-   PLB                ;} DB = $80
-   REP #$30           
-   LDY #$99C7         ; Y = x-ray HUD tilemap source address
-   LDX #$002E         ; X = x-ray HUD tilemap destination offset
-}
-
 clear_energy_hud:
 {
    PHP
@@ -754,32 +676,60 @@ clear_2x2_tile:
    RTL
 }
 
+clear_auto_reserve:
+{
+   PHP
+   PHX
+   PHY
+   PHB
+   PHK                ;\
+   PLB                ;} DB = $80
+   REP #$30           
+   LDA #$2C0F
+   
+   STA $7EC618;[$7E:C666];/ 8308248
+   STA $7EC61A;[$7E:C666];/
+
+   STA $7EC658;[$7E:C666];/ 8308312
+   STA $7EC65A;[$7E:C666];/
+   
+   STA $7EC698;[$7E:C666];/ 8308376
+   STA $7EC69A;[$7E:C666];/
+
+   PLB
+   PLY
+   PLX
+   PLP
+   RTS
+}
+
 decrease_reserve:
 ;;; $8986: Instruction - collect [[Y]] health reserve tank ;;;
 {
-LDA $09D4  ;[$7E:09D4]  ;\
-SEC                    ;|
-SBC $0000,y;[$84:E909]  ;} Samus' reserve energy += [[Y]]
-STA $09D4  ;[$7E:09D4]  ;/
-SEC
-SBC $09D6
-BPL after_max_reserve  ;} reserve too low
-LDA $09D4              ;\ 
-STA $09D6              ;} Save reseve as max
-after_max_reserve:
-LDA $09D6
-CMP #$0000
-BEQ not_last_reserve
-STZ $09C0
-not_last_reserve:
-LDA #$0168             ;\
-JSL $82E118;[$82:E118]  ;} Play room music track after 6 seconds
-LDA #$0019             ;\
-JSL $858080;[$85:8080]  ;} Display reserve tank message box
-JSR check_all_items
-INY                    ;\
-INY                    ;} Y += 2
-RTS
+   LDA $09D4  ;[$7E:09D4]  ;\
+   SEC                    ;|
+   SBC $0000,y;[$84:E909]  ;} Samus' reserve energy += [[Y]]
+   STA $09D4  ;[$7E:09D4]  ;/
+   SEC
+   SBC $09D6
+   BPL after_max_reserve  ;} reserve too low
+   LDA $09D4              ;\ 
+   STA $09D6              ;} Save reseve as max
+   after_max_reserve:
+   LDA $09D6
+;   CMP #$0000
+   BNE not_last_reserve
+   STZ $09C0               ; set to manual reserve
+   JSR clear_auto_reserve  ; clear the auto-reserve arrow
+   not_last_reserve:
+   LDA #$0168             ;\
+   JSL $82E118;[$82:E118]  ;} Play room music track after 6 seconds
+   LDA #$0019             ;\
+   JSL $858080;[$85:8080]  ;} Display reserve tank message box
+   JSR check_all_items
+   INY                    ;\
+   INY                    ;} Y += 2
+   RTS
 }
 
 deselect_if_current_item:
@@ -792,61 +742,16 @@ deselect_if_current_item:
    RTS
 }
 
+;;; **************
+;;; Misc Hacks
+;;; **************
 
+; skip gravity animation
+org $91D5BA 
+   RTL
+org $91D4E4 
+   RTL
 
-
-
-
-;;; $AF4F: Equipment screen - main - tanks - reserve tank ;;;
-;{
-;$82:AF4F 08          PHP  ; draw
-;$82:AF50 C2 30       REP #$30 ; set draw mode
-;$82:AF52 AD 57 07    LDA $0757  [$7E:0757]  ; load temporary reserve store
-;$82:AF55 D0 14       BNE $14    [$AF6B]     ; if zero
-;$82:AF57 A5 8F       LDA $8F    [$7E:008F]  ; load 008f
-;$82:AF59 89 80 00    BIT #$0080             ; ?
-;$82:AF5C F0 5E       BEQ $5E    [$AFBC]     ; if not zero
-;$82:AF5E AD D6 09    LDA $09D6  [$7E:09D6]  ; load reserve
-;$82:AF61 18          CLC                    ; add mode
-;$82:AF62 69 07 00    ADC #$0007             ; add 7
-;$82:AF65 29 F8 FF    AND #$FFF8             ; and FFF8
-;$82:AF68 8D 57 07    STA $0757  [$7E:0757]  ; save as reserve temp  <- gets called in bug
-;
-;$82:AF6B AD 57 07    LDA $0757  [$7E:0757]  ; load reserve temp
-;$82:AF6E 3A          DEC A                  ; decrease 
-;$82:AF6F 8D 57 07    STA $0757  [$7E:0757]  ; save  <- gets called in bug
-;$82:AF72 29 07 00    AND #$0007             ; check bit 7
-;$82:AF75 C9 07 00    CMP #$0007             ; if it has bit 7
-;$82:AF78 D0 07       BNE $07    [$AF81]     ; if not zero (jump to after sound)
-;$82:AF7A A9 2D 00    LDA #$002D             ;  load sound
-;$82:AF7D 22 4D 91 80 JSL $80914D[$80:914D]  ;} Queue sound 2Dh, sound library 3, max queued sounds allowed = 6
-;
-;$82:AF81 AD C2 09    LDA $09C2  [$7E:09C2]  ; load health
-;$82:AF84 18          CLC                    ; plus mode
-;$82:AF85 6D 04 BF    ADC $BF04  [$82:BF04]  ; add 1
-;$82:AF88 8D C2 09    STA $09C2  [$7E:09C2]  ; save health   <- gets called in bug
-;$82:AF8B CD C4 09    CMP $09C4  [$7E:09C4]  ; compare with max health
-;$82:AF8E 30 08       BMI $08    [$AF98]     ; if we are at max health (else goto AF98) <- this could never get called in bug
-;$82:AF90 AD C4 09    LDA $09C4  [$7E:09C4]  ; load max health
-;$82:AF93 8D C2 09    STA $09C2  [$7E:09C2]  ; save health
-;$82:AF96 80 18       BRA $18    [$AFB0]     ; goto end 
-;
-;$82:AF98 AD D6 09    LDA $09D6  [$7E:09D6]  ; load reserves 
-;$82:AF9B 38          SEC                  
-;$82:AF9C ED 04 BF    SBC $BF04  [$82:BF04]  ; decrease 1
-;$82:AF9F 8D D6 09    STA $09D6  [$7E:09D6]  ; save reserves  <- this never gets called in bug
-;$82:AFA2 F0 0C       BEQ $0C    [$AFB0]     ; if zero, goto end
-;$82:AFA4 10 16       BPL $16    [$AFBC]     ; else goto stop drawing (no zero)
-;$82:AFA6 AD C2 09    LDA $09C2  [$7E:09C2]  ; load health
-;$82:AFA9 18          CLC
-;$82:AFAA 6D D6 09    ADC $09D6  [$7E:09D6]  ; add reserves
-;$82:AFAD 8D C2 09    STA $09C2  [$7E:09C2]  ; save health added reserves
-;
-;:end
-;$82:AFB0 9C D6 09    STZ $09D6  [$7E:09D6]  ; zero reserves  <- this never gets called in bug
-;$82:AFB3 9C 57 07    STZ $0757  [$7E:0757]  ; zero game pause menu position
-;$82:AFB6 20 46 AE    JSR $AE46  [$82:AE46]  ; disable energy arrow glo
-;$82:AFB9 9C 55 07    STZ $0755  [$7E:0755]  ; zero temp reserves
-;
-;$82:AFBC 28          PLP
-;$82:AFBD 60          RTS
+; force 0% credits
+org $8BE634 
+   JMP $E67D
