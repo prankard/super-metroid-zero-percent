@@ -23,6 +23,7 @@
 - [x] basic varia tweaks (certain block to make it easier to travel and prevent softlock)
 - [x] remove missile/supermissile/powerbomb icons when complete
 - [x] turn on auto reserves by default
+- [x] turn off g4 entrance for access to mother brain
 - [ ] speed up fanfare for collecting items
 - [x] want to have item graphics to be put back (start empty, return full)
 - [ ] have game equip spazer when removing plasma

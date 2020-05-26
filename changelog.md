@@ -1,5 +1,10 @@
 0.8.2
 
+- made g4 door entrance a grey door
+- started editing intro title screen
+- allowed items to be dropped off visually
+- prevented auto reserve when dropped off last reserve tank
+
 - fixed bt spawn on collect item
 - added right side ws e-tank when disabled 
 - added lower norfair no spin jump activate pillar
