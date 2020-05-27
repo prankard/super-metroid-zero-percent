@@ -2,8 +2,48 @@ arch snes.cpu
 lorom
 
 ;;; **************
+;;; Defines
+;;; **************
+
+!max_missiles = $09C8
+!missiles = $09C6
+!max_supers = $09CC
+!supers = $09CA
+!max_power_bombs = $09D0 
+!power_bombs = $09CE
+!power_bombs = $09CE
+
+!items = $09A2  
+!selected_items = $09A4
+!beams = $09A8
+!selected_beams = $09A6
+!max_health = $09C4
+!health = $09C2
+!music_wait = #$001E ; wait for 0.5 second, not 6 seconds
+
+;;; **************
 ;;; Macros
 ;;; **************
+
+macro plm(gfx, collect_code, draw_code)
+{
+?plm:
+   <gfx>
+   dw $887C,?plm_collected;,$E0BA  ; Go to $E0BA if the room argument item is set
+   dw $8A24,?plm_collide  ; Link instruction = plm_etank_collide
+   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
+?plm_draw:
+   ;dw $0008,$A2B5   ; draw empty block
+   dw $0104,$A31B  ; draw old empty block
+   dw $8724,?plm_draw ; goto plm_etank_draw
+?plm_collide:
+   dw $8899       ; Set the room argument item
+   ;dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
+   <collect_code>
+?plm_collected:
+   <draw_code>
+}
+endmacro
 
 macro plm_chozo(gfx, collect_code, draw_code)
 {
@@ -26,7 +66,7 @@ macro plm_chozo(gfx, collect_code, draw_code)
       dw $8899                               ; Set the room argument item
       ;dw $E04F                               ; Draw item frame 0
       <draw_code>
-      dw $8BDD : db $02                      ; Clear music queue and queue item fanfare music track
+      ;dw $8BDD : db $02                      ; Clear music queue and queue item fanfare music track
       <collect_code>
    ?plm_chozo_collected:
       dw $8724,draw_orb                      ; goto draw orb
@@ -54,7 +94,7 @@ macro plm_shot(frame, collect_code)
       dw $8724,?plm_shot  ; Go to $E949
    ?plm_shot_collide:
       dw $8899       ; Set the room argument item
-      dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
+      ; dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
       <collect_code>
    ?plm_shot_collected:
       dw $000F,<frame> ; draw first frame of real item
@@ -64,25 +104,6 @@ macro plm_shot(frame, collect_code)
    }
 }
 endmacro
-
-;;; **************
-;;; Defines
-;;; **************
-
-!max_missiles = $09C8
-!missiles = $09C6
-!max_supers = $09CC
-!supers = $09CA
-!max_power_bombs = $09D0 
-!power_bombs = $09CE
-!power_bombs = $09CE
-
-!items = $09A2  
-!selected_items = $09A4
-!beams = $09A8
-!selected_beams = $09A6
-!max_health = $09C4
-!health = $09C2
 
 
 ;;; **************
@@ -201,27 +222,6 @@ org $848A05
 ; [x] Power Bomb	   Yes	No	   Yes
 ; [-] Energy Tank	   #Yes	#Yes	No
 ; [x] Reserve Tank	No 	No    Yes
-
-
-macro plm(gfx, collect_code, draw_code)
-{
-?plm:
-   <gfx>
-   dw $887C,?plm_collected;,$E0BA  ; Go to $E0BA if the room argument item is set
-   dw $8A24,?plm_collide  ; Link instruction = plm_etank_collide
-   dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
-?plm_draw:
-   ;dw $0008,$A2B5   ; draw empty block
-   dw $0104,$A31B  ; draw old empty block
-   dw $8724,?plm_draw ; goto plm_etank_draw
-?plm_collide:
-   dw $8899       ; Set the room argument item
-   dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
-   <collect_code>
-?plm_collected:
-   <draw_code>
-}
-endmacro
 
    
 org $84E099
@@ -475,8 +475,9 @@ dont_decrease_current_health:
 
 ;   STA $09C2  ; [$7E:09C2]  ; Samus' health = [Samus' max health]
    JSR check_all_items
-   LDA #$0168             ;\
-   JSL $82E118 ; [$82:E118]  ;} Play room music track after 6 seconds
+   ;LDA #$0168             ;\
+   LDA #$001E             ;\
+   ;JSL $82E118 ; [$82:E118]  ;} Play room music track after 6 seconds
    LDA #$0001             ;\
    JSL $858080 ; [$85:8080]  ;} Display energy tank message box
    ;JSL $809A79 ; init hud again for health ;; this almost works
@@ -564,7 +565,8 @@ check_all_failed:
 
 collect_equipment:
    JSR check_all_items
-   LDA #$0168 ; load music track
+   LDA !music_wait
+   ;LDA #$0168 ; load music track
    JMP $8908
 
 collect_grapple:
@@ -572,14 +574,16 @@ collect_grapple:
    JSR check_all_items
    LDA #$0004 ; grapple selected index
    JSR deselect_if_current_item
-   JMP $8930
+   LDA !music_wait
+   JMP $8933
 
 collect_xray:
    JSL clear_xray_hud
    JSR check_all_items
    LDA #$0005 ; x-ray selected index
    JSR deselect_if_current_item
-   JMP $8957
+   LDA !music_wait
+   JMP $895A
 
 clear_energy_hud:
 {
@@ -722,8 +726,9 @@ decrease_reserve:
    STZ $09C0               ; set to manual reserve
    JSR clear_auto_reserve  ; clear the auto-reserve arrow
    not_last_reserve:
-   LDA #$0168             ;\
-   JSL $82E118;[$82:E118]  ;} Play room music track after 6 seconds
+   ;LDA #$0168
+   LDA !music_wait             ;\
+   ;JSL $82E118;[$82:E118]  ;} Play room music track after 6 seconds
    LDA #$0019             ;\
    JSL $858080;[$85:8080]  ;} Display reserve tank message box
    JSR check_all_items
@@ -755,3 +760,27 @@ org $91D4E4
 ; force 0% credits
 org $8BE634 
    JMP $E67D
+
+;;; **************
+;;; Shorten music / Message box
+;;; **************
+org $858490 ; shorten message box time
+   LDX !music_wait
+org $858497
+   nop #4 ; stop music queue
+;   JMP $849F
+
+; shorten music wait
+
+org $848930 ; grapple music
+   LDA !music_wait
+   nop #4
+org $8489C1 ; missile music
+   LDA !music_wait
+   nop #4
+org $8489EA ; super music
+   LDA !music_wait
+   nop #4
+org $848A13 ; pb music
+   LDA !music_wait
+   nop #4
