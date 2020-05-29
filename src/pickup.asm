@@ -184,44 +184,149 @@ endmacro
 ;;; Unequip/Minus when collected
 ;;; **************
 
+macro add_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code)
+{
+   %add_or_remove_item(<collected_items>, <equipped_items>, "<update_gfx_code>", "<message_box_setup_code>", "", "ORA")
+}
+endmacro
+
+macro remove_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code)
+{
+   %add_or_remove_item(<collected_items>, <equipped_items>, "<update_gfx_code>", "<message_box_setup_code>", "JSR check_all_items", "EOR")
+}
+endmacro
+
+macro add_or_remove_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code, check_code, binary_operator)
+{
+   LDA $0000,y;[$84:E57F]  ;\
+   <binary_operator> <collected_items>  ;[$7E:09A8]  ;} Collected beams |= [[Y]]
+   STA <collected_items>  ;[$7E:09A8]  ;/
+   LDA $0000,y;[$84:E57F]  ;\
+   <binary_operator> <equipped_items>  ;[$7E:09A6]  ;} Equipped beams |= [[Y]]
+   STA <equipped_items>  ;[$7E:09A6]  ;/
+   <update_gfx_code>
+   ;LDA $0000,y;[$84:E57F]  ;\
+   ;ASL A                  ;|
+   ;AND #$0008             ;} If setting spazer: clear plasma
+   ;TRB $09A6  ;[$7E:09A6]  ;/
+   ;LDA $0000,y;[$84:E57F]  ;\
+   ;LSR A                  ;|
+   ;AND #$0004             ;} If setting plasma: clear spazer
+   ;TRB $09A6  ;[$7E:09A6]  ;/   
+   
+   ;LDA #$0168             ;\
+   ;JSL $82E118[$82:E118]  ;} Play room music track after 6 seconds
+   ;LDA $0002,y;[$84:E581]  ;\
+   ;AND #$00FF             ;} Display message box [[Y] + 2]
+   <message_box_setup_code>
+   JSL $858080;[$85:8080]  ;/
+   <check_code>
+   
+   INY                    ;\
+   INY                    ;} Y += 3
+   INY                    ;/
+   RTS
+
+}
+endmacro
+
+
+
+
+;add_beam:
+;;; $88B0: Instruction - pick up beam [[Y]] and display message box [[Y] + 2] ;;;
+;{
+;   LDA $0000,y;[$84:E57F]  ;\
+;   ORA $09A8  ;[$7E:09A8]  ;} Collected beams |= [[Y]]
+;   STA $09A8  ;[$7E:09A8]  ;/
+;   LDA $0000,y;[$84:E57F]  ;\
+;   ORA $09A6  ;[$7E:09A6]  ;} Equipped beams |= [[Y]]
+;   STA $09A6  ;[$7E:09A6]  ;/
+;   LDA $0000,y;[$84:E57F]  ;\
+;   ASL A                  ;|
+;   AND #$0008             ;} If setting spazer: clear plasma
+;   TRB $09A6  ;[$7E:09A6]  ;/
+;   LDA $0000,y;[$84:E57F]  ;\
+;   LSR A                  ;|
+;   AND #$0004             ;} If setting plasma: clear spazer
+;   TRB $09A6  ;[$7E:09A6]  ;/
+;
+;   after_add_beam:
+;   PHX                    ;\
+;   PHY                    ;|
+;   JSL $90AC8D;[$90:AC8D]  ;} Update beam GFX
+;   PLY                    ;|
+;   PLX                    ;/
+;
+;   ;LDA #$0168             ;\
+;   ;JSL $82E118[$82:E118]  ;} Play room music track after 6 seconds
+;   LDA $0002,y;[$84:E581]  ;\
+;   AND #$00FF             ;} Display message box [[Y] + 2]
+;   JSL $858080;[$85:8080]  ;/
+;   
+;   INY                    ;\
+;   INY                    ;} Y += 3
+;   INY                    ;/
+;   RTS
+;}
+
 ; beams
-org $8488B3
-   EOR $09A8
-org $8488BC
-   EOR $09A6
-org $8488B0
-   JMP pickup_beam_set_spazer_plasma
+;org $8488B3
+;   EOR $09A8
+;org $8488BC
+;   EOR $09A6
+;org $8488B0
+;   JMP pickup_beam_set_spazer_plasma
 
 ; temp stop plasma/spazer swap when equip
-org $8488C2
-   JMP $88D6
+;org $8488C2
+;   JMP $88D6
 
 ; equipment
-org $8488F6
-   EOR $0000,y 
-org $8488FF
-   EOR $0000,y
-org $848905
-   JMP collect_equipment
+;org $8488F6
+;   EOR $0000,y 
+;org $8488FF
+;   EOR $0000,y
+;org $848905
+;   JMP collect_equipment
 
 ; grapple
-org $84891D
-   EOR $0000,y 
-org $848926
-   EOR $0000,y
-org $84892C
-   JMP collect_grapple
+;org $84891D
+;   EOR $0000,y 
+;org $848926
+;   EOR $0000,y
+;org $84892C
+;   JMP collect_grapple
 
 ; xray 
-org $848944
-   EOR $0000,y 
-org $84894D
-   EOR $0000,y
-org $848953
-   JMP collect_xray
-   
+;org $848944
+;   EOR $0000,y 
+;org $84894D
+;   EOR $0000,y
+;org $848953
+;   JMP collect_xray
+
+org $8488B0
+add_beam:
+;;; $88B0: Instruction - pick up beam [[Y]] and display message box [[Y] + 2] ;;;
+%add_item($09A8, $09A6, "LDA $0000,y : ASL A : AND #$0008 : TRB $09A6 : LDA $0000,y : LSR A : AND #$0004 : TRB $09A6 : PHX : PHY : JSL $90AC8D : PLY : PLX", "LDA $0002,y : AND #$00FF")
+;   "LDA $0000,y : ASL A : AND #$0008 : TRB $09A6 : LDA $0000,y : LSR A : AND #$0004 : TRB $09A6"  ;/ If setting spazer: clear plasma, If setting plasma: clear spazer
+;   "PHX : PHY : JSL $90AC8D : PLY : PLX" ; update beam gfx
+;   "LDA $0002,y : AND #$00FF"             ;} Display message box [[Y] + 2]
+
+add_equipment:
+;;; $88F3: Instruction - pick up equipment [[Y]] and display message box [[Y] + 2] ;;;
+%add_item($09A2, $09A4, "", "LDA $0002,y : AND #$00FF")
+
+add_grapple:
+;;; $891A: Instruction - pick up equipment [[Y]], add grapple to HUD and display grapple message box ;;;
+%add_item($09A2, $09A4, "JSL $809A2E", "LDA $0005,y : AND #$00FF")
+
+add_xray:
+;;; $8941: Instruction - pick up equipment [[Y]], add x-ray to HUD and display x-ray message box ;;;
+%add_item($09A2, $09A4, "JSL $809A3E", "LDA $0006,y : AND #$00FF")
+
 ; Etank
-org $848968
 ;;; $8968: Instruction - collect [[Y]] health energy tank ;;;
 add_etank:
 {
@@ -415,7 +520,7 @@ plm_pb:
 
 plm_morph:
 ;;; $E3EF: Instruction list - PLM $EF23 (morph ball) ;;;
-%plm("dw $8764,$8700 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0004 : db $09", "dw $88F3,$0004 : db $09", "dw $E04F,$E067")
+%plm("dw $8764,$8700 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_equipment,$0004 : db $09", "dw add_equipment,$0004 : db $09", "dw $E04F,$E067")
 
 ;;; *************
 ;;; Chozo PLMs
@@ -573,65 +678,29 @@ plm_super_shot:
 ;   dw $8724,$DFA9  ; Go to $DFA9 - delete
 
 
+org $84EFD3 
 ;;; **************
-;;; Free Space Functions/Jumps
+;;; Free Space Start
 ;;; **************
 ; Free space bank 84:EFD3-FFFF
-
-org $84EFD3 
-draw_plm_sprites:
-   dw $E04F                               ; Draw item frame 0
-   dw $E067                               ; Draw item frame 1
-   dw $8724,draw_plm_sprites              ; Go to draw_plm_graphic
-
-draw_orb:
-   dw $0014,$A2C7
-   dw $000A,$A2CD
-   dw $0014,$A2D3
-   dw $000A,$A2CD
-   dw $8724,draw_orb   ; Go to draw_orb
-
-draw_etank:
-   dw $0004,$A2DF  ; draw frame 1
-   dw $0004,$A2E5  ; draw frame 1
-   dw $8724,draw_etank;,$E0BA  ; Go to plm_etank_collected
-
-draw_missile:
-   dw $0004,$A2EB
-   dw $0004,$A2F1
-   dw $8724,draw_missile  ; Go to draw_missile
-
-draw_supers:
-   dw $0004,$A2F7
-   dw $0004,$A2FD
-   dw $8724,draw_supers  ; Go to draw_super_missile
-
-draw_pb:
-   dw $0004,$A303
-   dw $0004,$A309
-   dw $8724,draw_pb  ; Go to draw_pb
-
-   
-if_select_not_held:
-;;; $8968: Instruction - go to [[Y]] if the select button is held ;;;
-{
-   ; code check
-   LDA $7E008B     ;\
-   BIT $2000   ;| If pressing select
-   BNE not_pressing_select     ;/
-   
-   ; is pressing, goto [[Y]]
-   JMP $8724
-
-   not_pressing_select:
-   INY
-   INY
-   RTS
-}
 
 ;;; **************
 ;;; Remove Health/Equipment/Ammo/Beams
 ;;; **************
+
+remove_beam:
+%remove_item($09A8, $09A6, "PHX : PHY : JSL $90AC8D : PLY : PLX", "LDA $0002,y : AND #$00FF")
+;   ; todo, toggle plazma when unquip spazer
+;   ; todo, toggle spazer when unquipt plasma
+
+remove_equipment:
+%remove_item($09A2, $09A4, "", "LDA $0002,y : AND #$00FF")
+
+remove_grapple:
+%remove_item($09A2, $09A4, "JSL clear_grapple_hud : LDA #$0004 : JSR deselect_if_current_item", "LDA $0005,y : AND #$00FF")
+
+remove_xray:
+%remove_item($09A2, $09A4, "JSL clear_xray_hud : LDA #$0005 : JSR deselect_if_current_item", "LDA $0006,y : AND #$00FF")
 
 remove_etank:
 {
@@ -653,11 +722,39 @@ remove_etank:
    JSL $858080 ; [$85:8080]  ;} Display energy tank message box
    ;JSL $809A79 ; init hud again for health ;; this almost works
 
-
-
    JSL clear_energy_hud
    STZ $0A06 ; force previous health to be 0, to force redraw
 
+   INY                    ;\
+   INY                    ;} Y += 2
+   RTS
+}
+
+remove_reserve_tank:
+;;; $8986: Instruction - collect [[Y]] health reserve tank ;;;
+{
+   LDA $09D4  ;[$7E:09D4]  ;\
+   SEC                    ;|
+   SBC $0000,y;[$84:E909]  ;} Samus' reserve energy += [[Y]]
+   STA $09D4  ;[$7E:09D4]  ;/
+   SEC
+   SBC $09D6
+   BPL after_max_reserve  ;} reserve too low
+   LDA $09D4              ;\ 
+   STA $09D6              ;} Save reseve as max
+   after_max_reserve:
+   LDA $09D6
+;   CMP #$0000
+   BNE not_last_reserve
+   STZ $09C0               ; set to manual reserve
+   JSR clear_auto_reserve  ; clear the auto-reserve arrow
+   not_last_reserve:
+   ;LDA #$0168
+   LDA !music_wait             ;\
+   ;JSL $82E118;[$82:E118]  ;} Play room music track after 6 seconds
+   LDA #$0019             ;\
+   JSL $858080;[$85:8080]  ;} Display reserve tank message box
+   JSR check_all_items
    INY                    ;\
    INY                    ;} Y += 2
    RTS
@@ -672,78 +769,30 @@ remove_supers:
 remove_pbs:
 %remove_ammo(!power_bombs, !max_power_bombs, "JSL $809A1E", check_power_bombs, #$0004)
 
+;;; **************
+;;; New PLM Commands
+;;; **************
 
-check_missiles:
-%max_limit_ammo(!missiles, !max_missiles, #$0001)
+if_select_not_held:
+;;; Instruction - go to [[Y]] if the select button is held ;;;
+{
+   ; code check
+   LDA $7E008B     ;\
+   BIT $2000   ;| If pressing select
+   BNE not_pressing_select     ;/
+   
+   ; is pressing, goto [[Y]]
+   JMP $8724
 
-check_supers:
-%max_limit_ammo(!supers, !max_supers, #$0002)
-
-check_power_bombs:
-%max_limit_ammo(!power_bombs, !max_power_bombs, #$0003)
-
-pickup_beam_set_spazer_plasma:
-   LDA $0000,y; [$84:E57F]  ;\
-   EOR $09A8  ;[$7E:09A8]  ;} Collected beams ^= [[Y]]
-   STA $09A8  ;[$7E:09A8]  ;/
-   AND $09A6  ;[$7E:09A6]  ;} Equipped beams ^= [[Y]]
-   STA $09A6  ;[$7E:09A6]  ;/
-   JSR check_all_items
-   JMP $88D6                ; jump back
-   ; todo, toggle plazma when unquip spazer
-   ; todo, toggle spazer when unquipt plasma
-
-check_all_items:
-;   JMP check_all_success ; test success
-   LDA !max_missiles
-   BNE check_all_failed
-   LDA !max_supers
-   BNE check_all_failed
-   LDA !max_power_bombs
-   BNE check_all_failed
-   LDA !items
-   BNE check_all_failed
-   LDA !beams
-   BNE check_all_failed
-   LDA !max_health
-   CMP #$0063
-   BNE check_all_failed
-check_all_success:
-   LDA $7ED820
-   ORA #$4000  ; set zebes exploding
-   STA $7ED820
-check_all_failed:
+   not_pressing_select:
+   INY
+   INY
    RTS
-
-collect_equipment:
-   JSR check_all_items
-   LDA !music_wait
-   nop #4
-   ;LDA #$0168 ; load music track
-   JMP $890C
-
-collect_grapple:
-   JSL clear_graple_hud
-   JSR check_all_items
-   LDA #$0004 ; grapple selected index
-   JSR deselect_if_current_item
-   LDA !music_wait
-   JMP $8933
-
-collect_xray:
-{  
-   JSL clear_xray_hud
-   JSR check_all_items
-   LDA #$0005 ; x-ray selected index
-   JSR deselect_if_current_item
-   LDA !music_wait
-   JMP $895A
 }
 
-
-print "'unset_room_item' at location: ", pc
+;print "'unset_room_item' at location: ", pc
 unset_room_item:
-;;; $8899: Instruction - unset the room argument item ;;;
+;;; Instruction - unset the room argument item ;;;
 {
    ; Positibe room argument => item is not set
    PHX
@@ -756,6 +805,55 @@ unset_room_item:
    .done:
    PLX
    RTS
+}
+
+
+;;; **************
+;;; Draw Code (is this redundant now?)
+;;; **************
+
+draw_plm_sprites:
+{
+   dw $E04F                               ; Draw item frame 0
+   dw $E067                               ; Draw item frame 1
+   dw $8724,draw_plm_sprites              ; Go to draw_plm_graphic
+}
+
+draw_orb:
+{
+   dw $0014,$A2C7
+   dw $000A,$A2CD
+   dw $0014,$A2D3
+   dw $000A,$A2CD
+   dw $8724,draw_orb   ; Go to draw_orb
+}
+
+draw_etank:
+{
+   dw $0004,$A2DF  ; draw frame 1
+   dw $0004,$A2E5  ; draw frame 1
+   dw $8724,draw_etank;,$E0BA  ; Go to plm_etank_collected
+}
+
+draw_missile:
+{
+   dw $0004,$A2EB
+   dw $0004,$A2F1
+   dw $8724,draw_missile  ; Go to draw_missile
+}
+
+draw_supers:
+{
+   dw $0004,$A2F7
+   dw $0004,$A2FD
+   dw $8724,draw_supers  ; Go to draw_super_missile
+}
+
+draw_pb:
+{
+   dw $0004,$A303
+   dw $0004,$A309
+   dw $8724,draw_pb  ; Go to draw_pb
 }
 
 clear_energy_hud:
@@ -793,7 +891,7 @@ clear_energy_hud:
 }
 
 ;;; $9A2E: Add grapple to HUD tilemap ;;;
-clear_graple_hud:
+clear_grapple_hud:
 {
 ; Called by:
 ;     $9A79: Initialise HUD
@@ -880,35 +978,97 @@ clear_auto_reserve:
    RTS
 }
 
-remove_reserve_tank:
-;;; $8986: Instruction - collect [[Y]] health reserve tank ;;;
+;;; **************
+;;; Check Functions Ammo/EndGame
+;;; **************
+
+check_missiles:
+%max_limit_ammo(!missiles, !max_missiles, #$0001)
+
+check_supers:
+%max_limit_ammo(!supers, !max_supers, #$0002)
+
+check_power_bombs:
+%max_limit_ammo(!power_bombs, !max_power_bombs, #$0003)
+
+check_all_items:
 {
-   LDA $09D4  ;[$7E:09D4]  ;\
-   SEC                    ;|
-   SBC $0000,y;[$84:E909]  ;} Samus' reserve energy += [[Y]]
-   STA $09D4  ;[$7E:09D4]  ;/
-   SEC
-   SBC $09D6
-   BPL after_max_reserve  ;} reserve too low
-   LDA $09D4              ;\ 
-   STA $09D6              ;} Save reseve as max
-   after_max_reserve:
-   LDA $09D6
-;   CMP #$0000
-   BNE not_last_reserve
-   STZ $09C0               ; set to manual reserve
-   JSR clear_auto_reserve  ; clear the auto-reserve arrow
-   not_last_reserve:
-   ;LDA #$0168
-   LDA !music_wait             ;\
-   ;JSL $82E118;[$82:E118]  ;} Play room music track after 6 seconds
-   LDA #$0019             ;\
-   JSL $858080;[$85:8080]  ;} Display reserve tank message box
-   JSR check_all_items
-   INY                    ;\
-   INY                    ;} Y += 2
+;   JMP check_all_success ; test success
+   LDA !max_missiles
+   BNE check_all_failed
+   LDA !max_supers
+   BNE check_all_failed
+   LDA !max_power_bombs
+   BNE check_all_failed
+   LDA !items
+   BNE check_all_failed
+   LDA !beams
+   BNE check_all_failed
+   LDA !max_health
+   CMP #$0063
+   BNE check_all_failed
+check_all_success:
+   LDA $7ED820
+   ORA #$4000  ; set zebes exploding
+   STA $7ED820
+check_all_failed:
    RTS
 }
+
+;remove_beam:
+;;; $88B0: Instruction - pick up beam [[Y]] and display message box [[Y] + 2] ;;;
+;{
+;   
+;   LDA $0000,y;[$84:E57F]  ;\
+;   EOR $09A8  ;[$7E:09A8]  ;} Collected beams |= [[Y]]
+;   STA $09A8  ;[$7E:09A8]  ;/
+;   LDA $0000,y;[$84:E57F]  ;\
+;   EOR $09A6  ;[$7E:09A6]  ;} Equipped beams |= [[Y]]
+;   STA $09A6  ;[$7E:09A6]  ;/
+;
+;   ; todo, toggle plazma when unquip spazer
+;   ; todo, toggle spazer when unquipt plasma
+;
+;   JSR check_all_items
+;
+;   JMP after_add_beam
+;}
+
+;pickup_beam_set_spazer_plasma:
+;   LDA $0000,y; [$84:E57F]  ;\
+;   EOR $09A8  ;[$7E:09A8]  ;} Collected beams ^= [[Y]]
+;   STA $09A8  ;[$7E:09A8]  ;/
+;   AND $09A6  ;[$7E:09A6]  ;} Equipped beams ^= [[Y]]
+;   STA $09A6  ;[$7E:09A6]  ;/
+;   JSR check_all_items
+;   JMP $88D6                ; jump back
+   ; todo, toggle plazma when unquip spazer
+   ; todo, toggle spazer when unquipt plasma
+
+;collect_equipment:
+;   JSR check_all_items
+;   LDA !music_wait
+;   nop #4
+   ;LDA #$0168 ; load music track
+;   JMP $890C
+
+;collect_grapple:
+;   JSL clear_grapple_hud
+;   JSR check_all_items
+;   LDA #$0004 ; grapple selected index
+;   JSR deselect_if_current_item
+;   LDA !music_wait
+;   JMP $8933
+
+;collect_xray:
+;{  
+;   JSL clear_xray_hud
+;   JSR check_all_items
+;   LDA #$0005 ; x-ray selected index
+;   JSR deselect_if_current_item
+;   LDA !music_wait
+;   JMP $895A
+;}
 
 deselect_if_current_item:
 ;;; Instruction - check if selected item [[X]] then deselect if it is ;;;
@@ -942,21 +1102,3 @@ org $858490 ; shorten message box time
 org $858497
    nop #4 ; stop music queue
 ;   JMP $849F
-
-; shorten music wait
-
-org $848930 ; grapple music
-   LDA !music_wait
-   nop #4
-;org $8489C1 ; missile music
-;   LDA !music_wait
-;   nop #4
-;org $8489EA ; super music
-;   LDA !music_wait
-;   nop #4
-;org $848A13 ; pb music
-;   LDA !music_wait
-;   nop #4
-org $8488DE ; beam music
-   LDA !music_wait
-   nop #4
