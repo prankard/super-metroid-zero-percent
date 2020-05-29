@@ -38,77 +38,97 @@ macro plm(gfx, collect_code, uncollect_code, draw_code)
    <draw_code>
    dw $8724,?plm_draw_full ; goto plm_etank_draw
 ?plm_collide:
-   dw $887C,?plm_check_pressed;,$E0BA  ; Go to $E0BA if the room argument item is set
+   dw $887C,?plm_uncollect;,$E0BA  ; Go to $E0BA if the room argument item is set
 ?plm_collect:
    dw $8899       ; Set the room argument item
    <collect_code>
    dw $8724,?plm_draw_full ; goto plm_etank_draw
    ;dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
-?plm_check_pressed:
-   dw if_select_not_held, ?plm_draw_full
 ?plm_uncollect:
+   dw if_select_not_held, ?plm_draw_full
    dw unset_room_item
    <uncollect_code>
    dw $8724,?plm_draw_empty ; goto plm_etank_draw
 }
 endmacro
 
-macro plm_chozo(gfx, collect_code, draw_code)
+macro plm_chozo(gfx, collect_code, uncollect_code, draw_code)
 {
    ?plm_chozo:
    ;;; $E8D7: Instruction list - PLM $EF7B (reserve tank, chozo orb) ;;;
    {
       <gfx>                                          ; Load item PLM GFX
-      dw $887C,?plm_chozo_collected                 ; Go to $E90B if the room argument item is set
       dw $8A2E,$DFAF                                       ; Call $DFAF (item orb)
       dw $8A2E,$DFC7                                       ; Call $DFC7 (item orb burst)
       dw $8A24,?plm_chozo_collide                   ; Link instruction = plm_reserve_chozo_collide
       dw $86C1,$DF89                                       ; Pre-instruction = go to link instruction if triggered
       dw $874E : db $16                                    ; Timer = 16h
-   ?plm_chozo_draw:
-      ;dw $E04F                               ; Draw item frame 0
-      ;dw $E067                               ; Draw item frame 1
+      dw $887C,?plm_chozo_draw_full                 ; Go to $E90B if the room argument item is set
+?plm_chozo_draw_empty:
       dw $0104,$A31B  ; draw old empty block
-      dw $8724,?plm_chozo_draw        ; Go to plm_reserve_chozo_draw
+      dw $8724,?plm_chozo_draw_empty        ; Go to plm_reserve_chozo_draw
+?plm_chozo_draw_full:
+      ;dw $8724, draw_orb
+      <draw_code>
+      dw $8724,?plm_chozo_draw_full ; goto plm_etank_draw
    ?plm_chozo_collide:
+      dw $887C,?plm_chozo_uncollect;,$E0BA  ; Go to $E0BA if the room argument item is set
+   ?plm_chozo_collect:
       dw $8899                               ; Set the room argument item
       ;dw $E04F                               ; Draw item frame 0
       <draw_code>
       ;dw $8BDD : db $02                      ; Clear music queue and queue item fanfare music track
       <collect_code>
-   ?plm_chozo_collected:
       dw $8724,draw_orb                      ; goto draw orb
       ;dw $0001,$A2B5                        ; draw blank frame (or frame in memory)
       ;dw $86BC                               ; Delete
+   ?plm_chozo_uncollect:
+      dw if_select_not_held, ?plm_chozo_draw_full
+      dw unset_room_item
+      <uncollect_code>
+      dw $0001,$A2B5 ; clear graphics
+      dw $8724,?plm_chozo_draw_empty ; goto plm_etank_draw
    }
 }
 endmacro
 
-macro plm_shot(frame, collect_code)
+macro plm_shot(frame, collect_code, uncollect_code)
 {
    ?plm_shot:
    {
       dw $8A2E,$E007  ; Call $E007 (item shot block)
-      dw $887C,?plm_shot_collected  ; Go to $E979 if the room argument item is set
       dw $8A24,?plm_shot_collide  ; Link instruction = $E970
       dw $86C1,$DF89  ; Pre-instruction = go to link instruction if triggered
       dw $874E : db $16    ; Timer = 16h
-   ?plm_shot_draw:
+      dw $887C,?plm_shot_draw_full  ; Go to $E979 if the room argument item is set
+   ?plm_shot_draw_empty:
       dw $0004,$A31B  ; draw old empty block
       ;dw $0004,$A2EB ; old draw code frame 1
       ;dw $0004,$A2F1 ; old draw code frame 2
-      dw $873F,?plm_shot_draw  ; Decrement timer and go to $E95C if non-zero
+      dw $873F,?plm_shot_draw_empty  ; Decrement timer and go to $E95C if non-zero
       dw $8A2E,$E020  ; Call $E020 (item shot block reconcealing)
       dw $8724,?plm_shot  ; Go to $E949
+   ?plm_shot_draw_full:
+      dw $0004,<frame> ; draw first frame of real item
+      dw $8724,?plm_shot_draw_full  ; Go to $E949
    ?plm_shot_collide:
+      dw $887C,?plm_shot_uncollect;,$E0BA  ; Go to $E0BA if the room argument item is set
+
       dw $8899       ; Set the room argument item
       ; dw $8BDD : db $02    ; Clear music queue and queue item fanfare music track
       <collect_code>
    ?plm_shot_collected:
-      dw $000F,<frame> ; draw first frame of real item
-      dw $8A2E,$E020  ; Call $E020 (item shot block reconcealing)
+      ;dw $000F,<frame> ; draw first frame of real item
+      ;dw $8A2E,$E020  ; Call $E020 (item shot block reconcealing)
       ;dw $8A2E,$E032  ; Call $E032 (empty item shot block reconcealing)
-      dw $8724,?plm_shot  ; Go to $E949 
+      dw $8724,?plm_shot_draw_full  ; Go to $E949 
+   ?plm_shot_uncollect:
+      dw if_select_not_held, ?plm_shot_draw_full
+      dw unset_room_item
+      <uncollect_code>
+      dw $0001,$A2B5 ; clear graphics
+      dw $8724, draw_empty_forever  ; Go to $E949 
+      ;dw $8724,?plm_shot  ; Go to $E949 
    }
 }
 endmacro
@@ -172,17 +192,6 @@ macro max_limit_ammo(ammo, max_ammo, hud_index)
 endmacro
 
 
-;;; **************
-;;; Bank 84
-;;; **************
-
-;; Stop missile hud from doing nothing at zero
-;org $8099DF
-;   JMP $8099E1
-
-;;; **************
-;;; Unequip/Minus when collected
-;;; **************
 
 macro add_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code)
 {
@@ -230,6 +239,18 @@ macro add_or_remove_item(collected_items, equipped_items, update_gfx_code, messa
 }
 endmacro
 
+
+;;; **************
+;;; Bank 84
+;;; **************
+
+;; Stop missile hud from doing nothing at zero
+;org $8099DF
+;   JMP $8099E1
+
+;;; **************
+;;; Unequip/Minus when collected
+;;; **************
 
 
 
@@ -528,7 +549,7 @@ plm_morph:
 
 plm_missile_chozo:
 ;;; $E47C: Instruction list - PLM $EF2F (missile tank, chozo orb) ;;;
-%plm_chozo("", "dw remove_missile,$0005", "dw $0004,$A2EB")
+%plm_chozo("", "dw remove_missile,$0005", "dw add_missile,$0005", "dw $0004,$A2EB")
 
 
 ;;; *************
@@ -537,72 +558,84 @@ org $84E2A1 ; Room for 18 PLM default definitions
 
 plm_super_chozo:
 ;;; $E4AE: Instruction list - PLM $EF33 (super missile tank, chozo orb) ;;;
-%plm_chozo("", "dw $89D2,$0005", "dw $0004,$A2F7")
+%plm_chozo("", "dw remove_supers,$0005", "dw add_supers,$0005", "dw $0004,$A2F7")
 
 plm_pb_chozo:
 ;;; $E4E0: Instruction list - PLM $EF37 (power bomb tank, chozo orb) ;;;
-%plm_chozo("", "dw $89FB,$0005", "dw $0004,$A303")
-
+%plm_chozo("", "dw remove_pbs,$0005", "dw add_pbs,$0005", "dw $0004,$A303")
 
 plm_bombs_chozo:
 ;;; $E512: Instruction list - PLM $EF3B (bombs, chozo orb) ;;;
 {
       dw $8764,$8000 : db $00,$00,$00,$00,$00,$00,$00,$00  ; Load item PLM GFX
-      dw $887C,plm_bombs_chozo_collected      ; Go to $E547 if the room argument item is set
       dw $8A2E,$DFAF                          ; Call $DFAF (item orb)
       dw $8A2E,$DFC7                          ; Call $DFC7 (item orb burst)
-      dw $8A24,plm_bombs_chozo_collide        ; Link instruction = $E53D
+      dw $8A24,.plm_bombs_chozo_collide        ; Link instruction = $E53D
       dw $86C1,$DF89                          ; Pre-instruction = go to link instruction if triggered
       dw $874E : db $16                       ; Timer = 16h
-   plm_bombs_chozo_draw:
+      dw $887C,.plm_bombs_chozo_draw_full      ; Go to $E547 if the room argument item is set
+   .plm_bombs_chozo_draw_empty:
       dw $0004,$A31B  ; draw old empty block
 ;      dw $E04F                               ; Draw item frame 0
 ;      dw $E067                               ; Draw item frame 1
-      dw $8724,plm_bombs_chozo_draw                          ; Go to $E535
-   plm_bombs_chozo_collide:
+      dw $8724,.plm_bombs_chozo_draw_empty                          ; Go to $E535
+   .plm_bombs_chozo_draw_full:
+      dw $E04F                               ; Draw item frame 0
+      dw $E067                               ; Draw item frame 1
+      dw $8724,.plm_bombs_chozo_draw_full                          ; Go to $E535
+   .plm_bombs_chozo_collide:
+      dw $887C,.plm_bombs_chozo_uncollect;,$E0BA  ; Go to $E0BA if the room argument item is set
+      dw $8899                                ; Set the room argument item
       dw $E04F                                ; Draw item frame 0
       dw $E067                                ; Draw item frame 1
-      dw $8899                                ; Set the room argument item
       ;dw $8BDD : db $02                       ; Clear music queue and queue item fanfare music track
-      dw $88F3,$1000 : db $13                 ; Pick up equipment 1000h and display message box 13h
-   plm_bombs_chozo_collected:
+      dw remove_equipment,$1000 : db $13                 ; Pick up equipment 1000h and display message box 13h
+   .plm_bombs_chozo_collect:
       dw $0003,$A2B5,$0003,$A2D9,$0003,$A2B5                ; orb reverse burst
       dw $0014,$A2C7,$000A,$A2CD,$0014,$A2D3,$000A,$A2CD    ; draw orb loop
       dw $8A2E,$DFC7                          ; item orb burst
       dw $0001,$A2B5                          ; draw blank frame
       dw $86BC                                ; Delete
+
+   .plm_bombs_chozo_uncollect:
+      dw if_select_not_held, .plm_bombs_chozo_draw_full
+      dw unset_room_item
+      dw add_equipment,$1000 : db $13                 ; Pick up equipment 1000h and display message box 13h
+      dw $0001,$A2B5 ; clear graphics
+      dw $8724,.plm_bombs_chozo_draw_empty ; goto plm_etank_draw
 }
 
 
-%plm_chozo("dw $8764,$8000 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$1000 : db $13", "dw $E04F")
+; bombs chozo
+;%plm_chozo("dw $8764,$8000 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$1000 : db $13", "dw $E04F")
 
 plm_charge:
 ;;; $E54D: Instruction list - PLM $EF3F (charge beam, chozo orb) ;;;
-%plm_chozo("dw $8764,$8B00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88B0,$1000 : db $0E", "dw $E04F")
+%plm_chozo("dw $8764,$8B00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_beam,$1000 : db $0E", "dw add_beam,$1000 : db $0E", "dw $E04F")
 
 plm_ice:
 ;; $E588: Instruction list - PLM $EF43 (ice beam, chozo orb) ;;;
-%plm_chozo("dw $8764,$8C00 : db $00,$03,$00,$00,$00,$03,$00,$00", "dw $88B0,$0002 : db $0F", "dw $E04F")
+%plm_chozo("dw $8764,$8C00 : db $00,$03,$00,$00,$00,$03,$00,$00", "dw remove_beam,$0002 : db $0F", "dw add_beam,$0002 : db $0F", "dw $E04F")
 
 plm_hijump:
 ;;; $E5C3: Instruction list - PLM $EF47 (hi-jump, chozo orb) ;;;
-%plm_chozo("dw $8764,$8400 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0100 : db $0B", "dw $E04F")
+%plm_chozo("dw $8764,$8400 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_equipment,$0100 : db $0B", "dw add_equipment,$0100 : db $0B", "dw $E04F")
 
 plm_speed:
 ;;; $E5FE: Instruction list - PLM $EF4B (speed booster, chozo orb) ;;;
-%plm_chozo("dw $8764,$8A00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$2000 : db $0D", "dw $E04F")
+%plm_chozo("dw $8764,$8A00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_equipment,$2000 : db $0D", "dw add_equipment,$2000 : db $0D", "dw $E04F")
 
 plm_wave:
 ;;; $E642: Instruction list - PLM $EF4F (wave beam, chozo orb) ;;;
-%plm_chozo("dw $8764,$8D00 : db $00,$02,$00,$00,$00,$02,$00,$00", "dw $88B0,$0001 : db $10", "dw $E04F")
+%plm_chozo("dw $8764,$8D00 : db $00,$02,$00,$00,$00,$02,$00,$00", "dw remove_beam,$0001 : db $10", "dw add_beam,$0001 : db $10", "dw $E04F")
 
 plm_spazer:
 ;;; $E67D: Instruction list - PLM $EF53 (spazer beam, chozo orb) ;;;
-%plm_chozo("dw $8764,$8F00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88B0,$0004 : db $11", "dw $E04F")
+%plm_chozo("dw $8764,$8F00 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_beam,$0004 : db $11", "dw add_beam,$0004 : db $11", "dw $E04F")
 
 plm_spring:
 ;;; $E6B8: Instruction list - PLM $EF57 (spring ball, chozo orb) ;;;
-%plm_chozo("dw $8764,$8200 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0002 : db $08", "dw $E04F")
+%plm_chozo("dw $8764,$8200 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_equipment,$0002 : db $08", "dw add_equipment,$0002 : db $08", "dw $E04F")
 
 
 ;;; *************
@@ -611,35 +644,35 @@ org $84E642 ; Room for 33 PLM default definitions
 
 plm_varia:
 ;;; $E6F3: Instruction list - PLM $EF5B (varia suit, chozo orb) ;;;
-%plm_chozo("dw $8764,$8300 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0001 : db $07", "dw $E04F")
+%plm_chozo("dw $8764,$8300 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_equipment,$0001 : db $07", "dw add_equipment,$0001 : db $07", "dw $E04F")
 
 plm_gravity:
 ;;; $E735: Instruction list - PLM $EF5F (gravity suit, chozo orb) ;;;
-%plm_chozo("dw $8764,$8100 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0020 : db $1A", "dw $E04F")
+%plm_chozo("dw $8764,$8100 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_equipment,$0020 : db $1A", "dw add_equipment,$0020 : db $1A", "dw $E04F")
 
 plm_xray:
 ;;; $E777: Instruction list - PLM $EF63 (x-ray scope, chozo orb) ;;;
-%plm_chozo("dw $8764,$8900 : db $01,$01,$00,$00,$03,$03,$00,$00", "dw $8941,$8000", "dw $E04F")
+%plm_chozo("dw $8764,$8900 : db $01,$01,$00,$00,$03,$03,$00,$00", "dw remove_xray,$8000", "dw add_xray,$8000", "dw $E04F")
 
 plm_plasma:
 ;;; $E7B1: Instruction list - PLM $EF67 (plasma beam, chozo orb) ;;;
-%plm_chozo("dw $8764,$8E00 : db $00,$01,$00,$00,$00,$01,$00,$00", "dw $88B0,$0008 : db $12", "dw $E04F")
+%plm_chozo("dw $8764,$8E00 : db $00,$01,$00,$00,$00,$01,$00,$00", "dw remove_beam,$0008 : db $12", "dw add_beam,$0008 : db $12", "dw $E04F")
 
 plm_grapple:
 ;;; $E7EC: Instruction list - PLM $EF6B (grapple beam, chozo orb) ;;;
-%plm_chozo("dw $8764,$8800 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $891A,$4000", "dw $E04F")
+%plm_chozo("dw $8764,$8800 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_grapple,$4000", "dw add_grapple,$4000", "dw $E04F")
 
 plm_space:
 ;;; $E826: Instruction list - PLM $EF6F (space jump, chozo orb) ;;;
-%plm_chozo("dw $8764,$8600 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0200 : db $0C", "dw $E04F")
+%plm_chozo("dw $8764,$8600 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_equipment,$0200 : db $0C", "dw add_equipment,$0200 : db $0C", "dw $E04F")
          
 plm_screw:
 ;;; $E861: Instruction list - PLM $EF73 (screw attack, chozo orb) ;;;
-%plm_chozo("dw $8764,$8500 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw $88F3,$0008 : db $0A", "dw $E04F")
+%plm_chozo("dw $8764,$8500 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_equipment,$0008 : db $0A", "dw add_equipment,$0008 : db $0A", "dw $E04F")
 
 plm_reserve:
 ;;; $E8D7: Instruction list - PLM $EF7B (reserve tank, chozo orb) ;;;
-%plm_chozo("dw $8764,$9000 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw add_reserve_tank,$0064", "dw $E04F")
+%plm_chozo("dw $8764,$9000 : db $00,$00,$00,$00,$00,$00,$00,$00", "dw remove_reserve_tank,$0064", "dw add_reserve_tank,$0064", "dw $E04F")
 
 ;;; *************
 ;;; Shot Blocks
@@ -647,15 +680,19 @@ plm_reserve:
 
 plm_etank_shot:
 ;;; $E911: Instruction list - PLM $EF7F (energy tank, shot block) ;;;
-%plm_shot($A2DF, "dw $8968,$0064")
+%plm_shot($A2DF, "dw remove_etank,$0064", "dw add_etank,$0064")
 
 plm_missile_shot:
 ;;; $E949: Instruction list - PLM $EF83 (missile tank, shot block) ;;;
-%plm_shot($A2EB, "dw $89A9,$0005")
+%plm_shot($A2EB, "dw remove_missile,$0005", "dw add_missile,$0005")
 
 plm_super_shot:
 ;;; $E981: Instruction list - PLM $EF87 (super missile tank, shot block) ;;;
-%plm_shot($A2F7, "dw $89D2,$0005")
+%plm_shot($A2F7, "dw remove_supers,$0005", "dw add_supers,$0005")
+
+; prevent bomb chozo from deleting when not defeated (so we can pick up bombs that will not be floating)
+org $84D606
+   JMP $d615
 
 
    ; sprite locations
@@ -826,6 +863,12 @@ draw_orb:
    dw $0014,$A2D3
    dw $000A,$A2CD
    dw $8724,draw_orb   ; Go to draw_orb
+}
+
+draw_empty_forever:
+{
+   dw $0004,$A31B  ; draw old empty block
+   dw $8724,draw_empty_forever   ; Go to draw_orb
 }
 
 draw_etank:
