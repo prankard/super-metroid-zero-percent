@@ -45,6 +45,7 @@
 - [x] bt activates when you have bombs, not when you don't have bombs
 - [x] 1% completion as due to morphing ball id change
 - [x] bomb counter goes up after powerbombs selected
+- [ ] spazer sound fanfare door slow transition
 
 
 
