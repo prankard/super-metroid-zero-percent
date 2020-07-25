@@ -13,13 +13,13 @@ new_heath:
    LDA #$05DB             ;\ 1499 = 05DB, 499 = 01F3, 199 = 00C7
    STA $09C4 ; [$7E:09C4]  ;} Health
    STA $09C2  ; [$7E:09C2]  ;/
-   LDA #$0005             ;\  00E6   =  230  000A = 10
+   LDA #$00E6             ;\  00E6   =  230  000A = 10
    STA $09C8 ; [$7E:09C8]  ;} Missiles
    STA $09C6 ; [$7E:09C6]  ;/
-   LDA #$0005             ;\ = 0032 = 50
+   LDA #$0032             ;\ = 0032 = 50
    STA $09CC ; [$7E:09CC]  ;} Super missiles
    STA $09CA ; [$7E:09CA]  ;/
-   LDA #$0005             ;\ = 0032 = 50
+   LDA #$0032             ;\ = 0032 = 50
    STA $09D0 ; [$7E:09D0]  ;} Power bombs
    STA $09CE ; [$7E:09CE]  ;/
    STZ $09D2 ; [$7E:09D2]  ; Currently selected HUD item

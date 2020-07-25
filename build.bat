@@ -24,4 +24,7 @@ for %%f in (src/*.asm) do (
     %ASAR% src/%%f build/%FILENAME%
 )
 
+:: build ips
+%FLOATING_IPS% --create --ips "./rom.sfc" "./build/%FILENAME%"
+
 pause
