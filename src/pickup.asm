@@ -193,25 +193,25 @@ endmacro
 
 
 
-macro add_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code)
+macro add_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code, exit_code)
 {
-   %add_or_remove_item(<collected_items>, <equipped_items>, "<update_gfx_code>", "<message_box_setup_code>", "", "ORA")
+   %add_or_remove_item(<collected_items>, <equipped_items>, "<update_gfx_code>", "<message_box_setup_code>", "", "<exit_code>", "ORA", "ORA")
 }
 endmacro
 
-macro remove_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code)
+macro remove_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code, exit_code)
 {
-   %add_or_remove_item(<collected_items>, <equipped_items>, "<update_gfx_code>", "<message_box_setup_code>", "JSR check_all_items", "EOR")
+   %add_or_remove_item(<collected_items>, <equipped_items>, "<update_gfx_code>", "<message_box_setup_code>", "JSR check_all_items", "<exit_code>", "EOR", "EOR #$FFFF : AND")
 }
 endmacro
 
-macro add_or_remove_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code, check_code, binary_operator)
+macro add_or_remove_item(collected_items, equipped_items, update_gfx_code, message_box_setup_code, check_code, exit_code, binary_operator, second_binary_operator)
 {
    LDA $0000,y;[$84:E57F]  ;\
    <binary_operator> <collected_items>  ;[$7E:09A8]  ;} Collected beams |= [[Y]]
    STA <collected_items>  ;[$7E:09A8]  ;/
    LDA $0000,y;[$84:E57F]  ;\
-   <binary_operator> <equipped_items>  ;[$7E:09A6]  ;} Equipped beams |= [[Y]]
+   <second_binary_operator> <equipped_items>  ;[$7E:09A6]  ;} Equipped beams |= [[Y]]
    STA <equipped_items>  ;[$7E:09A6]  ;/
    <update_gfx_code>
    ;LDA $0000,y;[$84:E57F]  ;\
@@ -231,9 +231,7 @@ macro add_or_remove_item(collected_items, equipped_items, update_gfx_code, messa
    JSL $858080;[$85:8080]  ;/
    <check_code>
    
-   INY                    ;\
-   INY                    ;} Y += 3
-   INY                    ;/
+   <exit_code>
    RTS
 
 }
@@ -330,22 +328,22 @@ endmacro
 org $8488B0
 add_beam:
 ;;; $88B0: Instruction - pick up beam [[Y]] and display message box [[Y] + 2] ;;;
-%add_item($09A8, $09A6, "LDA $0000,y : ASL A : AND #$0008 : TRB $09A6 : LDA $0000,y : LSR A : AND #$0004 : TRB $09A6 : PHX : PHY : JSL $90AC8D : PLY : PLX", "LDA $0002,y : AND #$00FF")
+%add_item($09A8, $09A6, "LDA $0000,y : ASL A : AND #$0008 : TRB $09A6 : LDA $0000,y : LSR A : AND #$0004 : TRB $09A6 : PHX : PHY : JSL $90AC8D : PLY : PLX", "LDA $0002,y : AND #$00FF", "INY : INY : INY")
 ;   "LDA $0000,y : ASL A : AND #$0008 : TRB $09A6 : LDA $0000,y : LSR A : AND #$0004 : TRB $09A6"  ;/ If setting spazer: clear plasma, If setting plasma: clear spazer
 ;   "PHX : PHY : JSL $90AC8D : PLY : PLX" ; update beam gfx
 ;   "LDA $0002,y : AND #$00FF"             ;} Display message box [[Y] + 2]
 
 add_equipment:
 ;;; $88F3: Instruction - pick up equipment [[Y]] and display message box [[Y] + 2] ;;;
-%add_item($09A2, $09A4, "", "LDA $0002,y : AND #$00FF")
+%add_item($09A2, $09A4, "", "LDA $0002,y : AND #$00FF", "INY : INY : INY")
 
 add_grapple:
 ;;; $891A: Instruction - pick up equipment [[Y]], add grapple to HUD and display grapple message box ;;;
-%add_item($09A2, $09A4, "JSL $809A2E", "LDA $0005,y : AND #$00FF")
+%add_item($09A2, $09A4, "JSL $809A2E", "LDA #$0005", "INY : INY")
 
 add_xray:
 ;;; $8941: Instruction - pick up equipment [[Y]], add x-ray to HUD and display x-ray message box ;;;
-%add_item($09A2, $09A4, "JSL $809A3E", "LDA $0006,y : AND #$00FF")
+%add_item($09A2, $09A4, "JSL $809A3E", "LDA #$0006", "INY : INY")
 
 ; Etank
 ;;; $8968: Instruction - collect [[Y]] health energy tank ;;;
@@ -726,18 +724,19 @@ org $84EFD3
 ;;; **************
 
 remove_beam:
-%remove_item($09A8, $09A6, "PHX : PHY : JSL $90AC8D : PLY : PLX", "LDA $0002,y : AND #$00FF")
+%remove_item($09A8, $09A6, "PHX : PHY : JSL $90AC8D : PLY : PLX", "LDA $0002,y : AND #$00FF", "INY : INY : INY")
 ;   ; todo, toggle plazma when unquip spazer
 ;   ; todo, toggle spazer when unquipt plasma
 
 remove_equipment:
-%remove_item($09A2, $09A4, "", "LDA $0002,y : AND #$00FF")
+%remove_item($09A2, $09A4, "", "LDA $0002,y : AND #$00FF", "INY : INY : INY")
 
 remove_grapple:
-%remove_item($09A2, $09A4, "JSL clear_grapple_hud : LDA #$0004 : JSR deselect_if_current_item", "LDA $0005,y : AND #$00FF")
+%remove_item($09A2, $09A4, "JSL clear_grapple_hud : LDA #$0004 : JSR deselect_if_current_item", "LDA #$0005", "INY : INY")
 
 remove_xray:
-%remove_item($09A2, $09A4, "JSL clear_xray_hud : LDA #$0005 : JSR deselect_if_current_item", "LDA $0006,y : AND #$00FF")
+print "remove_xray: ", pc
+%remove_item($09A2, $09A4, "JSL clear_xray_hud : LDA #$0005 : JSR deselect_if_current_item", "LDA #$0006", "INY : INY")
 
 remove_etank:
 {
