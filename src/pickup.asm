@@ -183,10 +183,11 @@ macro max_limit_ammo(ammo, max_ammo, hud_index)
    BPL ?done
    LDA <max_ammo>
    STA <ammo>
-   ?done:
-   JSR check_all_items
+   BNE ?done ; if ammo is not zero, goto end
    LDA <hud_index>
    JSR deselect_if_current_item
+   ?done:
+   JSR check_all_items
    RTS
 }
 endmacro

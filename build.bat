@@ -7,7 +7,7 @@ SET ASAR=tools\asar171\asar.exe
 SET FLOATING_IPS=tools\flips.exe
 
 :: FileConfig
-SET VERSION=0.8.3
+SET VERSION=0.8.4
 SET FILENAME=Super_Metroid_Zero-Percent-%VERSION%.sfc
 
 :: Copy
